@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       Int           @id @default(autoincrement())
+  name                     String
+  password                 String?
+  email                    String        @unique
+  verified                 Boolean       @default(false)
+  photo                    String        @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+  emailVerified            Boolean       @default(false)
+  gender                   GenderType    @default(Other)
+  googleId                 String?       @unique
+  resetpasswordtoken       String?
+  resetpasswordtokenexpiry DateTime?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  receivedChats            Chat[]        @relation("ReceivedMessages")
+  sentChats                Chat[]        @relation("SentMessages")
+  GroupMembers             GroupMember[]
+  ownedGroups              Group[]       @relation("OwnerGroups")
+}
+
+model Chat {
+  id         Int        @id @default(autoincrement())
+  content    String?
+  isRead     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  receiverId Int
+  senderId   Int
+  receiver   User       @relation(name: "ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User       @relation(name: "SentMessages", fields: [senderId], references: [id])
+  GroupChat  GroupChat?
+  File       File[]
+}
+
+model GroupChat {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    Int      @unique
+  group     Group    @relation(fields: [groupId], references: [id])
+  groupId   Int
+}
+
+model Group {
+  id          Int           @id @default(autoincrement())
+  groupName   String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  owner       User          @relation("OwnerGroups", fields: [ownerId], references: [id])
+  ownerId     Int
+  groupChats  GroupChat[]
+  GroupMember GroupMember[]
+}
+
+model GroupMember {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id])
+  groupId   Int
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  role      Role     @default(Viewer)
+}
+
+model File {
+  id        Int      @id @default(autoincrement())
+  url       String
+  type      FileType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    Int
+}
+
+enum FileType {
+  VoiceMessage
+  Image
+  Video
+  Document
+  Other
+}
+
+enum GenderType {
+  Male
+  Female
+  Other
+}
+
+enum Role {
+  ADMIN
+  Viewer
+}
