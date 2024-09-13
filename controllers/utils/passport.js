@@ -21,33 +21,30 @@ passport.use(
     },
     async function (request, accessToken, refreshToken, profile, done) {
       try {
-        const exist = await prisma.user.findMany({
+        const userProfile = await prisma.user.findMany({
           where: {
             email: profile["emails"][0].value,
             // googleId: profile.id,
           },
         });
-        console.log("User authenticated successfully:", exist);
-        if (exist.length === 0) {
+        if (userProfile.length === 0) {
           await prisma.user.create({
             data: {
               email: profile["emails"][0].value,
               name: profile["displayName"],
               photo: profile["photos"][0].value,
               googleId: profile.id,
-              // gender: profile.gender || "Other",
-              // username: profile["name"]["givenName"],
               verified: true,
             },
           });
         }
-        const user = await prisma.user.findMany({
-          where: {
-            email: profile["emails"][0].value,
-            // googleId: profile.id,
-          },
-        });
-        return done(null, user);
+        return done(null, userProfile);
+        // const user = await prisma.user.findMany({
+        //   where: {
+        //     email: profile["emails"][0].value,
+        //     // googleId: profile.id,
+        //   },
+        // });
       } catch (error) {
         console.error("Error during user processing:", error); // Log the error for debugging
         return done(error);

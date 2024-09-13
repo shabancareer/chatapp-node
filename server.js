@@ -31,7 +31,6 @@ app.use(
 // initialize passport and session
 app.use(passport.initialize());
 app.use(passport.session());
-
 app.get("/", (req, res) => {
   try {
     res.render("pages/auth");
@@ -41,19 +40,6 @@ app.get("/", (req, res) => {
   }
 });
 
-// app.use(
-//   "/auth/google/callback",
-//   passport.authenticate("google", {
-//     // access_type: "offline",
-//     // scope: ["email", "profile"],
-//   }),
-//   (req, res) => {
-//     if (!req.user) {
-//       res.status(400).json({ error: "Authentication failed" });
-//     }
-//     res.status(200).json(req.user);
-//   }
-// );
 //Home page Route
 app.get(
   "/auth/google",
@@ -65,18 +51,12 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/error" }),
   function (req, res) {
-    try {
-      res.redirect("/success");
-    } catch (error) {
-      console.error("Error during authentication callback:", error); // Log the error
-      res.status(500).send("An error occurred during authentication.");
-      // // Successful authentication, redirect success.
-      // res.redirect("/success");
-    }
+    // Successful authentication, redirect success.
+    res.redirect("/success");
   }
 );
-app.get("/success", (req, res) => res.send(userProfile));
 app.get("/error", (req, res) => res.send("error logging in"));
+app.get("/success", (req, res) => res.send("userProfile"));
 
 // app.get("/", (req, res) => {
 //   res.send("API Running!..");
