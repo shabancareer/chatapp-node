@@ -9,7 +9,6 @@ import path from "path";
 import userRoute from "./routes/userRoute.js";
 import chatRoute from "./routes/chatRoute.js";
 import CustomError from "./controllers/utils/config/errors/CustomError.js";
-
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -56,12 +55,17 @@ app.get(
   }
 );
 app.get("/error", (req, res) => res.send("error logging in"));
-app.get("/success", (req, res) => res.send("userProfile"));
-
-// app.get("/", (req, res) => {
-//   res.send("API Running!..");
-// });
-
+app.get("/success", (req, res) => {
+  if (req.user && req.user.length > 0) {
+    // Pass user data to the template
+    res.render("pages/success", { user: req.user[0] });
+  } else {
+    res.status(404).send("No user data found");
+  }
+});
+app.get("/", (req, res) => {
+  res.send("API Running!..");
+});
 app.use("/api/", userRoute);
 app.use("/api/", chatRoute);
 app.use((err, req, res, next) => {

@@ -74,7 +74,8 @@ export const login = async (req, res, next) => {
         "E-mail Cannot find user with these credentials. Please singUp first"
       );
     }
-    const isMatch = await bcrypt.compare(password, userLogin.password);
+    const isMatch = bcrypt.compare(password, userLogin.password);
+    // const isMatch = await bcrypt.compare(password, userLogin.password);
 
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });

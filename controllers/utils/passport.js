@@ -34,7 +34,7 @@ passport.use(
               name: profile["displayName"],
               photo: profile["photos"][0].value,
               googleId: profile.id,
-              verified: true,
+              // verified: true,
             },
           });
         }

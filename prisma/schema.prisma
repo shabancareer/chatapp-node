@@ -8,23 +8,31 @@ datasource db {
 }
 
 model User {
-  id                       Int           @id @default(autoincrement())
+  id                       Int                 @id @default(autoincrement())
   name                     String
   password                 String?
-  email                    String        @unique
-  verified                 Boolean       @default(false)
-  photo                    String        @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
-  emailVerified            Boolean       @default(false)
-  gender                   GenderType    @default(Other)
-  googleId                 String?       @unique
+  email                    String              @unique
+  photo                    String              @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+  gender                   GenderType          @default(Other)
   resetpasswordtoken       String?
   resetpasswordtokenexpiry DateTime?
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
-  receivedChats            Chat[]        @relation("ReceivedMessages")
-  sentChats                Chat[]        @relation("SentMessages")
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  receivedChats            Chat[]              @relation("ReceivedMessages")
+  sentChats                Chat[]              @relation("SentMessages")
   GroupMembers             GroupMember[]
-  ownedGroups              Group[]       @relation("OwnerGroups")
+  ownedGroups              Group[]             @relation("OwnerGroups")
+  emailVerified            Boolean             @default(false)
+  tokenEmailVerifiedId     Int?
+  // tokenEmailVerified       tokenEmailVerified? @relation(fields: [tokenEmailVerifiedId], references: [id])
+  tokenEmailVerified       tokenEmailVerified?
+}
+
+model tokenEmailVerified {
+  id     Int    @id @default(autoincrement())
+  type   String
+  userId Int    @unique
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model Chat {
