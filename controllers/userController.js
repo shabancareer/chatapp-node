@@ -2,12 +2,16 @@ import prisma from "../DB/db.config.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 import { validationResult } from "express-validator";
-// import authValidators from "./utils/validators/index.js";
 import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
 import { generateToken, generateResetToken } from "./utils/generateToken.js";
+// import authValidators from "./utils/validators/index.js";
+const JWT_SECRET = process.env.JWT_SECRET_EMAIL;
+const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY_EMAIL;
+
 const ACCESS_TOKEN = {
   access: process.env.AUTH_ACCESS_TOKEN_SECRET,
   expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY,
@@ -17,6 +21,15 @@ const REFRESH_TOKEN = {
   refresh: process.env.AUTH_REFRESH_TOKEN_SECRET,
   secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
 };
+// Setup Mailtrap Transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.HOST,
+  port: process.env.EPORT,
+  auth: {
+    user: process.env.USER,
+    pass: process.env.PASS,
+  },
+});
 
 export const singUp = async (req, res, next) => {
   try {
@@ -33,8 +46,30 @@ export const singUp = async (req, res, next) => {
         email,
         password: hashedPassword,
         photo,
+        emailVerified: false,
       },
     });
+    // Generate a email verification token
+    const emailVerificationToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+      expiresIn: TOKEN_EXPIRY,
+    });
+    // Save the verification token in tokenEmailVerified table
+    await prisma.tokenEmailVerified.create({
+      data: {
+        emailVerificationToken,
+        expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+        user: { connect: { id: user.id } },
+      },
+    });
+    // Send verification email
+    const verificationLink = `http://localhost:3000/verify-email?token=${emailVerificationToken}`;
+    await transporter.sendMail({
+      from: '"Your Company" <noreply@yourcompany.com>',
+      to: email,
+      subject: "Email Verification",
+      html: `Please verify your email by clicking on this link: <a href="${verificationLink}">Verify Email</a>`,
+    });
+    res.json({ message: "Verification email sent. Please check your inbox." });
     const tokens = await generateToken(newUser, res);
     // console.log("Token:-", token);
     const { accessToken, refreshToken } = tokens;
@@ -56,7 +91,44 @@ export const singUp = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
+export const emailVerification = async (req, res) => {
+  const { emailVerificationToken } = req.query;
+  try {
+    if (!emailVerificationToken) {
+      return res
+        .status(400)
+        .json({ error: "email Verification Token is required" });
+    }
+    // Verify the JWT token
+    const decodedEmailVerificationToken = jwt.verify(
+      emailVerificationToken,
+      JWT_SECRET
+    );
+    // Find the token in the database
+    const tokenRecord = await prisma.tokenEmailVerified.findUnique({
+      where: { decodedEmailVerificationToken },
+      include: { user: true },
+    });
 
+    if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+      return res.status(400).json({ error: "Token is invalid or expired." });
+    }
+
+    // Mark the user as verified
+    await prisma.user.update({
+      where: { id: tokenRecord.userId },
+      data: { emailVerified: true },
+    });
+    // Delete the token record after successful verification
+    await prisma.tokenEmailVerified.delete({
+      where: { id: tokenRecord.id },
+    });
+    res.json({ message: "Email verified successfully. You can now log in." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error verifying email." });
+  }
+};
 export const login = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -73,6 +145,12 @@ export const login = async (req, res, next) => {
       throw new Error(
         "E-mail Cannot find user with these credentials. Please singUp first"
       );
+    }
+    // Check if the email is verified
+    if (!user.emailVerified) {
+      return res
+        .status(403)
+        .json({ error: "Please verify your email before logging in." });
     }
     const isMatch = bcrypt.compare(password, userLogin.password);
     // const isMatch = await bcrypt.compare(password, userLogin.password);

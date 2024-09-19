@@ -7,6 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// model User {
+//   id                       Int                 @id @default(autoincrement())
+//   name                     String
+//   password                 String?
+//   email                    String              @unique
+//   photo                    String              @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+//   gender                   GenderType          @default(Other)
+//   googleId                 String?
+//   resetpasswordtoken       String?
+//   resetpasswordtokenexpiry DateTime?
+//   createdAt                DateTime            @default(now())
+//   updatedAt                DateTime            @updatedAt
+//   receivedChats            Chat[]              @relation("ReceivedMessages")
+//   sentChats                Chat[]              @relation("SentMessages")
+//   GroupMembers             GroupMember[]
+//   ownedGroups              Group[]             @relation("OwnerGroups")
+//   emailVerified            Boolean             @default(false)
+//   tokenEmailVerified       tokenEmailVerified?
+// }
+
+// model tokenEmailVerified {
+//   id        Int      @id @default(autoincrement())
+//   type      String
+//   token     String
+//   expiresAt DateTime
+//   user      User     @relation(fields: [userId], references: [id])
+//   userId    Int      @unique // Ensuring one-to-one relation with User
+// }
 model User {
   id                       Int                 @id @default(autoincrement())
   name                     String
@@ -14,6 +42,7 @@ model User {
   email                    String              @unique
   photo                    String              @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
   gender                   GenderType          @default(Other)
+  googleId                 String?
   resetpasswordtoken       String?
   resetpasswordtokenexpiry DateTime?
   createdAt                DateTime            @default(now())
@@ -23,16 +52,16 @@ model User {
   GroupMembers             GroupMember[]
   ownedGroups              Group[]             @relation("OwnerGroups")
   emailVerified            Boolean             @default(false)
-  tokenEmailVerifiedId     Int?
-  // tokenEmailVerified       tokenEmailVerified? @relation(fields: [tokenEmailVerifiedId], references: [id])
-  tokenEmailVerified       tokenEmailVerified?
+  tokenEmailVerified       tokenEmailVerified? // This should establish the one-to-one relation
 }
 
 model tokenEmailVerified {
-  id     Int    @id @default(autoincrement())
-  type   String
-  userId Int    @unique
-  user   User   @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  type      String
+  token     String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique
 }
 
 model Chat {
