@@ -32,7 +32,6 @@ router.patch(
 );
 router.get("/me", requireAuthentication, fetchAuthUserProfile);
 router.get("/allusers", requireAuthentication, fetchAllProfiles);
-router.get("/verify-email", emailVerification);
 
 // router.get(
 //   "/:id",

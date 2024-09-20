@@ -57,9 +57,8 @@ model User {
 
 model tokenEmailVerified {
   id        Int      @id @default(autoincrement())
-  type      String
-  token     String
   expiresAt DateTime
+  token     String
   user      User     @relation(fields: [userId], references: [id])
   userId    Int      @unique
 }

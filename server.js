@@ -1,14 +1,15 @@
 import express from "express";
 import dotenv from "dotenv";
 import session from "express-session";
-import passport from "./controllers/utils/passport.js";
 // import cookieSession from "cookie-session";
 import cookieParser from "cookie-parser";
 import { fileURLToPath } from "url";
 import path from "path";
 import userRoute from "./routes/userRoute.js";
 import chatRoute from "./routes/chatRoute.js";
+import passport from "./controllers/utils/passport.js";
 import CustomError from "./controllers/utils/config/errors/CustomError.js";
+import { emailVerification } from "./controllers/userController.js";
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -55,6 +56,7 @@ app.get(
   }
 );
 app.get("/error", (req, res) => res.send("error logging in"));
+
 app.get("/success", (req, res) => {
   if (req.user && req.user.length > 0) {
     // Pass user data to the template
@@ -68,6 +70,8 @@ app.get("/", (req, res) => {
 });
 app.use("/api/", userRoute);
 app.use("/api/", chatRoute);
+app.get("/verify-email", emailVerification);
+
 app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);

@@ -50,26 +50,32 @@ export const singUp = async (req, res, next) => {
       },
     });
     // Generate a email verification token
-    const emailVerificationToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: TOKEN_EXPIRY,
-    });
+    const emailVerificationToken = jwt.sign(
+      { userId: newUser.id },
+      JWT_SECRET,
+      {
+        expiresIn: TOKEN_EXPIRY,
+      }
+    );
+    // console.log(emailVerificationToken);
     // Save the verification token in tokenEmailVerified table
     await prisma.tokenEmailVerified.create({
       data: {
-        emailVerificationToken,
+        token: emailVerificationToken,
         expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
-        user: { connect: { id: user.id } },
+        // user: { connect: { userId: newUser.id } },
+        user: { connect: { id: newUser.id } },
       },
     });
     // Send verification email
     const verificationLink = `http://localhost:3000/verify-email?token=${emailVerificationToken}`;
+    console.log(verificationLink);
     await transporter.sendMail({
       from: '"Your Company" <noreply@yourcompany.com>',
       to: email,
       subject: "Email Verification",
       html: `Please verify your email by clicking on this link: <a href="${verificationLink}">Verify Email</a>`,
     });
-    res.json({ message: "Verification email sent. Please check your inbox." });
     const tokens = await generateToken(newUser, res);
     // console.log("Token:-", token);
     const { accessToken, refreshToken } = tokens;
@@ -83,33 +89,33 @@ export const singUp = async (req, res, next) => {
       success: true,
       data: newUser,
       accessToken,
-      msg: "User created.",
+      msg: "user registered successfully and Verification email sent. Please check your inbox!...",
+      // res.json({ message: "Verification email sent. Please check your inbox." });
     });
   } catch (error) {
     next(error);
+    console.log(error);
   } finally {
     await prisma.$disconnect();
   }
 };
 export const emailVerification = async (req, res) => {
-  const { emailVerificationToken } = req.query;
+  const { token } = req.query;
+  console.log("emailVerificationToken:-", token);
   try {
-    if (!emailVerificationToken) {
+    if (!token) {
       return res
         .status(400)
-        .json({ error: "email Verification Token is required" });
+        .json({ error: "Email Verification Token is required" });
     }
     // Verify the JWT token
-    const decodedEmailVerificationToken = jwt.verify(
-      emailVerificationToken,
-      JWT_SECRET
-    );
+    const decodedEmailVerificationToken = jwt.verify(token, JWT_SECRET);
     // Find the token in the database
     const tokenRecord = await prisma.tokenEmailVerified.findUnique({
-      where: { decodedEmailVerificationToken },
+      // where: { decodedEmailVerificationToken: token },
+      where: { token: decodedEmailVerificationToken },
       include: { user: true },
     });
-
     if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
       return res.status(400).json({ error: "Token is invalid or expired." });
     }
