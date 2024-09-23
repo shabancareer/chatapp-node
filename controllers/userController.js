@@ -39,7 +39,6 @@ export const singUp = async (req, res, next) => {
     }
     const { name, email, password, photo } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = await prisma.user.create({
       data: {
         name,
@@ -101,7 +100,7 @@ export const singUp = async (req, res, next) => {
 };
 export const emailVerification = async (req, res) => {
   const { token } = req.query;
-  console.log("emailVerificationToken:-", token);
+  // console.log("emailVerificationToken:-", token);
   try {
     if (!token) {
       return res
@@ -110,12 +109,16 @@ export const emailVerification = async (req, res) => {
     }
     // Verify the JWT token
     const decodedEmailVerificationToken = jwt.verify(token, JWT_SECRET);
+    console.log(decodedEmailVerificationToken);
     // Find the token in the database
-    const tokenRecord = await prisma.tokenEmailVerified.findUnique({
-      // where: { decodedEmailVerificationToken: token },
-      where: { token: decodedEmailVerificationToken },
-      include: { user: true },
+    const tokenRecord = await prisma.tokenEmailVerified.findFirst({
+      where: { token },
+      select: {
+        userId: true,
+        expiresAt: true,
+      },
     });
+    console.log("tokenRecord:-", tokenRecord);
     if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
       return res.status(400).json({ error: "Token is invalid or expired." });
     }
@@ -127,12 +130,15 @@ export const emailVerification = async (req, res) => {
     });
     // Delete the token record after successful verification
     await prisma.tokenEmailVerified.delete({
-      where: { id: tokenRecord.id },
+      where: { token: token },
     });
     res.json({ message: "Email verified successfully. You can now log in." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error verifying email." });
+    res.json({
+      message: "Email verified successfully. You can now log in.",
+      redirectUrl: "/login",
+    });
   }
 };
 export const login = async (req, res, next) => {

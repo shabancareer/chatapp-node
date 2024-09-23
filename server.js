@@ -52,19 +52,20 @@ app.get(
   passport.authenticate("google", { failureRedirect: "/error" }),
   function (req, res) {
     // Successful authentication, redirect success.
-    res.redirect("/success");
+    res.redirect("/verify-email");
   }
 );
 app.get("/error", (req, res) => res.send("error logging in"));
 
-app.get("/success", (req, res) => {
-  if (req.user && req.user.length > 0) {
-    // Pass user data to the template
-    res.render("pages/success", { user: req.user[0] });
-  } else {
-    res.status(404).send("No user data found");
-  }
-});
+// app.get("/success", (req, res) => {
+//   console.log(req.user);
+//   if (req.user && req.user.length > 0) {
+//     // Pass user data to the template
+//     res.render("pages/success", { user: req.user[0] });
+//   } else {
+//     res.status(404).send("No user data found");
+//   }
+// });
 app.get("/", (req, res) => {
   res.send("API Running!..");
 });
