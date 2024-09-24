@@ -10,6 +10,13 @@ import chatRoute from "./routes/chatRoute.js";
 import passport from "./controllers/utils/passport.js";
 import CustomError from "./controllers/utils/config/errors/CustomError.js";
 import { emailVerification } from "./controllers/userController.js";
+import { generateToken } from "./controllers/utils/generateToken.js";
+
+const ACCESS_TOKEN = {
+  access: process.env.AUTH_ACCESS_TOKEN_SECRET,
+  expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY,
+};
+
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -50,8 +57,22 @@ app.get(
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/error" }),
-  function (req, res) {
+  async (req, res) => {
     // Successful authentication, redirect success.
+    const tokens = await generateToken(req.user, res);
+    const { accessToken, refreshToken } = tokens;
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
     res.redirect("/verify-email");
   }
 );
