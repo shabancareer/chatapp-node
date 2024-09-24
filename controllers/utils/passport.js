@@ -52,7 +52,6 @@ passport.use(
               // verified: true,
             },
           });
-          console.log(newUser);
           const emailVerificationToken = jwt.sign(
             { userId: newUser.id },
             JWT_SECRET,
@@ -76,6 +75,7 @@ passport.use(
             subject: "Email Verification",
             html: `Please verify your email by clicking on this link: <a href="${verificationLink}">Verify Email</a>`,
           });
+          console.log("verificationLink:-", verificationLink);
         } else {
           newUser = userProfile[0];
         }

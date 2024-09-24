@@ -73,7 +73,13 @@ app.get(
       secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-    res.redirect("/verify-email");
+    // res.redirect(
+    //   "/",
+    //   "user registered successfully and Verification email sent. Please check your inbox!..."
+    // );
+    res.send(
+      "user registered successfully and Verification email sent. Please check your inbox!..."
+    );
   }
 );
 app.get("/error", (req, res) => res.send("error logging in"));

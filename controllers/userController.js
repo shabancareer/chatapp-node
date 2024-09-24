@@ -132,7 +132,7 @@ export const emailVerification = async (req, res) => {
     await prisma.tokenEmailVerified.delete({
       where: { token: token },
     });
-    res.json({ message: "Email verified successfully. You can now log in." });
+    res.send("Email verified successfully. You can now log in.");
   } catch (error) {
     console.error(error);
     res.json({
