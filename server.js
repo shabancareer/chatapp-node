@@ -46,7 +46,6 @@ app.get("/", (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
 //Home page Route
 app.get(
   "/auth/google",
