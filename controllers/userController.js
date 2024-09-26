@@ -32,6 +32,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const singUp = async (req, res, next) => {
+  console.log(req.file);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -68,7 +69,6 @@ export const singUp = async (req, res, next) => {
     });
     // Send verification email
     const verificationLink = `http://localhost:3000/verify-email?token=${emailVerificationToken}`;
-    console.log(verificationLink);
     await transporter.sendMail({
       from: '"Your Company" <noreply@yourcompany.com>',
       to: email,

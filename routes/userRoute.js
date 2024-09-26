@@ -18,7 +18,7 @@ import {
   forgotPassword,
   resetPassword,
   fetchAllProfiles,
-  emailVerification,
+  // emailVerification,
 } from "../controllers/userController.js";
 import {
   // fetchUserProfile,
@@ -37,7 +37,6 @@ const upload = multer({
   fileFilter: async (req, file, cb) => {
     // Get the full path to the uploaded file
     const filePath = path.join("uploads/", file.filename);
-
     // Read the file to get its buffer
     fs.readFile(filePath, async (err, fileBuffer) => {
       if (err) {
@@ -68,7 +67,7 @@ const upload = multer({
         return cb(new Error("Error reading file"));
       }
 
-      const fileType = await fileTypeFromBuffer(fileBuffer);
+      const fileType = await fileTypeFromFile(fileBuffer);
       if (
         !fileType ||
         !["image/jpeg", "image/png", "image/gif"].includes(fileType.mime)
@@ -89,60 +88,61 @@ const upload = multer({
     });
   },
 });
-var imagekit = new ImageKit({
-  publicKey: "public_xq1sEkV2QjbvRD1jNCxRLClYzgM=",
-  privateKey: "private_1tgoUN84u8TC2YZY4s/QPXUZNtA=",
-  urlEndpoint: "https://ik.imagekit.io/eaaq3vb8d",
-});
-const filePath = path.join(__dirname, "../uploads/", "my_file_name.jpg"); // Replace with your actual file name
-// Read the file from the uploads folder
-fs.readFile(filePath, (err, fileBuffer) => {
-  if (err) {
-    return console.error("Error reading the file:", err);
-  }
-  imagekit
-    .upload({
-      // file: fileBuffer // File content to upload
-      //   ? fileName
-      //   : "my_file_name.jpg", // Desired file name
-      file: fileBuffer, // File content (Buffer)
-      fileName: __filename,
-      extensions: [
-        {
-          name: "google-auto-tagging",
-          maxTags: 5,
-          minConfidence: 95,
-        },
-        {
-          name: "remove-bg",
-          options: {
-            add_shadow: true,
-            bg_color: "green",
-          },
-        },
-      ],
-      transformation: {
-        pre: "l-text,i-Imagekit,fs-50,l-end",
-        post: [
-          // {
-          //   // type: "abs",
-          //   value: "sr-240_360_480_720_1080",
-          //   // protocol: "dash",
-          // },
-          {
-            type: "transformation",
-            value: "h-3000",
-          },
-        ],
-      },
-    })
-    .then((response) => {
-      console.log(response);
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-});
+
+// var imagekit = new ImageKit({
+//   publicKey: "public_xq1sEkV2QjbvRD1jNCxRLClYzgM=",
+//   privateKey: "private_1tgoUN84u8TC2YZY4s/QPXUZNtA=",
+//   urlEndpoint: "https://ik.imagekit.io/eaaq3vb8d",
+// });
+// const filePath = path.join(__dirname, "../uploads/", "my_file_name.jpg"); // Replace with your actual file name
+// // Read the file from the uploads folder
+// fs.readFile(filePath, (err, fileBuffer) => {
+//   if (err) {
+//     return console.error("Error reading the file:", err);
+//   }
+//   imagekit
+//     .upload({
+//       // file: fileBuffer // File content to upload
+//       //   ? fileName
+//       //   : "my_file_name.jpg", // Desired file name
+//       file: fileBuffer, // File content (Buffer)
+//       fileName: __filename,
+//       // extensions: [
+//       //   {
+//       //     name: "google-auto-tagging",
+//       //     maxTags: 5,
+//       //     minConfidence: 95,
+//       //   },
+//       //   {
+//       //     name: "remove-bg",
+//       //     options: {
+//       //       add_shadow: true,
+//       //       bg_color: "green",
+//       //     },
+//       //   },
+//       // ],
+//       transformation: {
+//         pre: "l-text,i-Imagekit,fs-50,l-end",
+//         post: [
+//           // {
+//           //   // type: "abs",
+//           //   value: "sr-240_360_480_720_1080",
+//           //   // protocol: "dash",
+//           // },
+//           {
+//             type: "transformation",
+//             value: "h-3000",
+//           },
+//         ],
+//       },
+//     })
+//     .then((response) => {
+//       console.log(response);
+//     })
+//     .catch((error) => {
+//       console.log(error);
+//     });
+// });
 
 const router = Router();
 router.post(
