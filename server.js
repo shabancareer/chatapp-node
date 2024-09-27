@@ -16,7 +16,6 @@ const ACCESS_TOKEN = {
   access: process.env.AUTH_ACCESS_TOKEN_SECRET,
   expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY,
 };
-
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -103,13 +102,14 @@ app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
-
+  console.error("Error:=", err);
+  const errorMessage = err.message || "Internal Server Error";
   if (err instanceof CustomError) {
     return res
       .status(err.status)
       .json({ message: err.feedback, errors: err.cause });
   }
-  return res.status(500).json({ message: "Internal Server Error" });
+  return res.status(500).json({ message: errorMessage });
 });
 
 // Get the directory name and file name

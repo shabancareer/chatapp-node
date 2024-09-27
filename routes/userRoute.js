@@ -8,7 +8,6 @@ import ImageKit from "imagekit";
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";
-
 import {
   singUp,
   login,
@@ -61,12 +60,10 @@ const upload = multer({
   },
   fileFilter: async (req, file, cb) => {
     const filePath = path.join("uploads/", file.filename);
-
     fs.readFile(filePath, async (err, fileBuffer) => {
       if (err) {
         return cb(new Error("Error reading file"));
       }
-
       const fileType = await fileTypeFromFile(fileBuffer);
       if (
         !fileType ||
@@ -82,13 +79,11 @@ const upload = multer({
           new Error("Please upload a valid image file (jpeg, png, gif)")
         );
       }
-
       // If valid, accept the file
       cb(null, true);
     });
   },
 });
-
 // var imagekit = new ImageKit({
 //   publicKey: "public_xq1sEkV2QjbvRD1jNCxRLClYzgM=",
 //   privateKey: "private_1tgoUN84u8TC2YZY4s/QPXUZNtA=",

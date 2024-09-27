@@ -32,7 +32,6 @@ const transporter = nodemailer.createTransport({
 });
 
 export const singUp = async (req, res, next) => {
-  console.log(req.file);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
