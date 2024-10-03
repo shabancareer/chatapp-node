@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
-import { validationResult } from "express-validator";
+import { body, validationResult } from "express-validator";
 import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
@@ -32,6 +32,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const singUp = async (req, res, next) => {
+  // console.log(res.send("File uploaded successfully"));
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

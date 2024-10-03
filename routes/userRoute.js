@@ -1,6 +1,6 @@
 import { Router } from "express";
-import multer from "multer";
-import { fileTypeFromFile } from "file-type";
+import multer, { memoryStorage } from "multer";
+import { fileTypeFromFile, fileTypeFromBuffer } from "file-type";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -23,67 +23,58 @@ import {
   // fetchUserProfile,
   fetchAuthUserProfile,
 } from "../controllers/authController.js";
-
-// Get the current directory equivalent to __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const upload = multer({
-  dest: "uploads/",
+  dest: "uploads",
   limits: {
-    fileSize: Infinity, // Set file size limit as needed (Infinity is not recommended for production)
+    fileSize: 2 * 1024 * 1024,
   },
-  fileFilter: async (req, file, cb) => {
-    // Get the full path to the uploaded file
-    const filePath = path.join("uploads/", file.filename);
-    // Read the file to get its buffer
-    fs.readFile(filePath, async (err, fileBuffer) => {
-      if (err) {
-        return cb(new Error("Error reading file"));
-      }
-
-      // Use fileTypeFromFile to detect the actual file type
-      const fileType = await fileTypeFromFile(filePath);
-      if (!fileType) {
-        return cb(new Error("Unable to determine file type"));
-      }
-      // Check if the file is an image (you can also restrict to specific types like 'jpg', 'png', etc.)
-      if (!["image/jpeg", "image/png", "image/gif"].includes(fileType.mime)) {
-        return cb(
-          new Error("Please upload a valid image file (jpeg, png, gif)")
-        );
-      }
-
-      // If everything is fine, accept the file
-      cb(null, true);
-    });
-  },
-  fileFilter: async (req, file, cb) => {
-    const filePath = path.join("uploads/", file.filename);
-    fs.readFile(filePath, async (err, fileBuffer) => {
-      if (err) {
-        return cb(new Error("Error reading file"));
-      }
-      const fileType = await fileTypeFromFile(fileBuffer);
-      if (
-        !fileType ||
-        !["image/jpeg", "image/png", "image/gif"].includes(fileType.mime)
-      ) {
-        // Delete the invalid file
-        fs.unlink(filePath, (unlinkErr) => {
-          if (unlinkErr) {
-            console.error("Error deleting file:", unlinkErr);
-          }
-        });
-        return cb(
-          new Error("Please upload a valid image file (jpeg, png, gif)")
-        );
-      }
-      // If valid, accept the file
-      cb(null, true);
-    });
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Please upload an image"));
+    }
+    cb(null, true);
   },
 });
+
+// Get the current directory equivalent to __dirname
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const storage = multer.memoryStorage();
+// const upload = multer({
+//   storage: storage, // Use memory storage for accessing file buffer
+//   limits: {
+//     fileSize: 1024 * 1024 * 5, // 5MB limit
+//   },
+//   fileFilter: async (req, file, cb) => {
+//     // Log the file object for debugging
+//     // console.log("File received: ", file);
+//     try {
+//       if (!file || !file.buffer) {
+//         // return cb(new Error("No file or file buffer available"));
+//         // console.log(cb(new Error("No file or file buffer available")));
+//         console.log(file.buffer);
+//       }
+//       // Detect the file type from the buffer
+//       const fileType = await fileTypeFromBuffer(file.buffer);
+//       console.log("File type:", fileType);
+//       if (!fileType) {
+//         return cb(new Error("Unable to determine file type"));
+//       }
+
+//       // Validate the file type (allowing jpeg, png, gif)
+//       if (!["image/jpeg", "image/png", "image/gif"].includes(fileType.mime)) {
+//         return cb(
+//           new Error("Please upload a valid image file (jpeg, png, gif)")
+//         );
+//       }
+
+//       cb(null, true);
+//     } catch (error) {
+//       return cb(new Error("Error processing file"));
+//     }
+//   },
+// });
+
 // var imagekit = new ImageKit({
 //   publicKey: "public_xq1sEkV2QjbvRD1jNCxRLClYzgM=",
 //   privateKey: "private_1tgoUN84u8TC2YZY4s/QPXUZNtA=",
