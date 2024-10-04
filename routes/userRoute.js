@@ -1,6 +1,6 @@
 import { Router } from "express";
-import multer, { memoryStorage } from "multer";
-import { fileTypeFromFile, fileTypeFromBuffer } from "file-type";
+import multer from "multer";
+import { fileTypeFromBuffer } from "file-type";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -24,27 +24,30 @@ import {
   fetchAuthUserProfile,
 } from "../controllers/authController.js";
 const upload = multer({
-  dest: "uploads",
+  dest: "uploads/",
   limits: {
     fileSize: 2 * 1024 * 1024,
   },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Please upload an image"));
+  fileFilter: async (req, file, cb) => {
+    console.log(req.file);
+    console.log(`File saved at: ${req.file.path}`);
+    try {
+      const buffer = await fs.promises.readFile(file.path);
+      const fileType = await fileTypeFromBuffer(buffer);
+      if (!fileType || !fileType.mime.startsWith("image/")) {
+        return cb(new Error("Please upload a valid image file."));
+      }
+      cb(null, true);
+    } catch (error) {
+      cb(error);
     }
-    cb(null, true);
   },
 });
-
+console.log("upload.dest:=", upload.dest);
 // Get the current directory equivalent to __dirname
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
-// const storage = multer.memoryStorage();
-// const upload = multer({
-//   storage: storage, // Use memory storage for accessing file buffer
-//   limits: {
-//     fileSize: 1024 * 1024 * 5, // 5MB limit
-//   },
+
 //   fileFilter: async (req, file, cb) => {
 //     // Log the file object for debugging
 //     // console.log("File received: ", file);
