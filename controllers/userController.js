@@ -1,6 +1,7 @@
 import prisma from "../DB/db.config.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+// import path from "path";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import { body, validationResult } from "express-validator";
@@ -8,6 +9,11 @@ import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
 import { generateToken, generateResetToken } from "./utils/generateToken.js";
+import {
+  validateImage,
+  uploadToImageKit,
+} from "../Image-Verification/fileverification.js";
+// import { upload } from "../routes/userRoute.js";
 // import authValidators from "./utils/validators/index.js";
 const JWT_SECRET = process.env.JWT_SECRET_EMAIL;
 const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY_EMAIL;
@@ -32,21 +38,32 @@ const transporter = nodemailer.createTransport({
 });
 
 export const singUp = async (req, res, next) => {
-  // console.log(res.send("File uploaded successfully"));
-  console.log(req.file);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
-    const { name, email, password, photo } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Validate the uploaded image file
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
+    // Image validation using fileTypeFromBuffer
+    const isValidImage = await validateImage(req.file);
+    if (!isValidImage) {
+      return res
+        .status(400)
+        .json({ message: "Please upload a valid image file" });
+    }
+    const imageKitResponse = await uploadToImageKit(req.file);
+    const imageUrl = imageKitResponse.url;
+    // const { name, email, password, photo } = req.body;
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const newUser = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: req.body.name,
+        email: req.body.email,
         password: hashedPassword,
-        photo,
+        photo: imageUrl, // Store ImageKit URL in the database
         emailVerified: false,
       },
     });
@@ -72,7 +89,7 @@ export const singUp = async (req, res, next) => {
     const verificationLink = `http://localhost:3000/verify-email?token=${emailVerificationToken}`;
     await transporter.sendMail({
       from: '"Your Company" <noreply@yourcompany.com>',
-      to: email,
+      to: newUser.email,
       subject: "Email Verification",
       html: `Please verify your email by clicking on this link: <a href="${verificationLink}">Verify Email</a>`,
     });

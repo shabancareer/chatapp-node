@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { fileTypeFromBuffer } from "file-type";
+import { fileTypeFromBuffer, fileTypeFromFile } from "file-type";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -23,123 +23,58 @@ import {
   // fetchUserProfile,
   fetchAuthUserProfile,
 } from "../controllers/authController.js";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const upload = multer({
   dest: "uploads/",
   limits: {
     fileSize: 2 * 1024 * 1024,
   },
-  fileFilter: async (req, file, cb) => {
-    console.log(req.file);
-    console.log(`File saved at: ${req.file.path}`);
-    try {
-      const buffer = await fs.promises.readFile(file.path);
-      const fileType = await fileTypeFromBuffer(buffer);
-      if (!fileType || !fileType.mime.startsWith("image/")) {
-        return cb(new Error("Please upload a valid image file."));
-      }
-      cb(null, true);
-    } catch (error) {
-      cb(error);
-    }
+  fileFilter: (req, file, cb) => {
+    cb(null, true);
   },
-});
-console.log("upload.dest:=", upload.dest);
-// Get the current directory equivalent to __dirname
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
+}).single("file");
+// }).single("image");
 
-//   fileFilter: async (req, file, cb) => {
-//     // Log the file object for debugging
-//     // console.log("File received: ", file);
-//     try {
-//       if (!file || !file.buffer) {
-//         // return cb(new Error("No file or file buffer available"));
-//         // console.log(cb(new Error("No file or file buffer available")));
-//         console.log(file.buffer);
-//       }
-//       // Detect the file type from the buffer
-//       const fileType = await fileTypeFromBuffer(file.buffer);
-//       console.log("File type:", fileType);
-//       if (!fileType) {
-//         return cb(new Error("Unable to determine file type"));
-//       }
-
-//       // Validate the file type (allowing jpeg, png, gif)
-//       if (!["image/jpeg", "image/png", "image/gif"].includes(fileType.mime)) {
-//         return cb(
-//           new Error("Please upload a valid image file (jpeg, png, gif)")
-//         );
-//       }
-
-//       cb(null, true);
-//     } catch (error) {
-//       return cb(new Error("Error processing file"));
-//     }
-//   },
-// });
-
-// var imagekit = new ImageKit({
-//   publicKey: "public_xq1sEkV2QjbvRD1jNCxRLClYzgM=",
-//   privateKey: "private_1tgoUN84u8TC2YZY4s/QPXUZNtA=",
-//   urlEndpoint: "https://ik.imagekit.io/eaaq3vb8d",
-// });
-// const filePath = path.join(__dirname, "../uploads/", "my_file_name.jpg"); // Replace with your actual file name
-// // Read the file from the uploads folder
-// fs.readFile(filePath, (err, fileBuffer) => {
-//   if (err) {
-//     return console.error("Error reading the file:", err);
-//   }
-//   imagekit
-//     .upload({
-//       // file: fileBuffer // File content to upload
-//       //   ? fileName
-//       //   : "my_file_name.jpg", // Desired file name
-//       file: fileBuffer, // File content (Buffer)
-//       fileName: __filename,
-//       // extensions: [
-//       //   {
-//       //     name: "google-auto-tagging",
-//       //     maxTags: 5,
-//       //     minConfidence: 95,
-//       //   },
-//       //   {
-//       //     name: "remove-bg",
-//       //     options: {
-//       //       add_shadow: true,
-//       //       bg_color: "green",
-//       //     },
-//       //   },
-//       // ],
-//       transformation: {
-//         pre: "l-text,i-Imagekit,fs-50,l-end",
-//         post: [
-//           // {
-//           //   // type: "abs",
-//           //   value: "sr-240_360_480_720_1080",
-//           //   // protocol: "dash",
-//           // },
-//           {
-//             type: "transformation",
-//             value: "h-3000",
-//           },
-//         ],
+// // Assuming Multer saved the file and you have access to req.file
+// const filePath = path.join(__dirname, "../uploads/");
+// console.log("File path:", filePath);
+// const fileBuffer = fs.readFileSync(filePath);
+// imagekit
+//   .upload({
+//     // file: fileBuffer // File content to upload
+//     //   ? fileName
+//     //   : "my_file_name.jpg", // Desired file name
+//     file: fileBuffer, // File content (Buffer)
+//     fileName: __filename,
+//     extensions: [
+//       {
+//         name: "google-auto-tagging",
+//         maxTags: 5,
+//         minConfidence: 95,
 //       },
-//     })
-//     .then((response) => {
-//       console.log(response);
-//     })
-//     .catch((error) => {
-//       console.log(error);
-//     });
-// });
+//     ],
+//     transformation: {
+//       pre: "l-text,i-Imagekit,fs-50,l-end",
+//       post: [
+//         {
+//           type: "transformation",
+//           value: "h-3000",
+//         },
+//       ],
+//     },
+//   })
+//   .then((response) => {
+//     console.log(response);
+//   })
+//   .catch((error) => {
+//     console.log(error);
+//   });
 
 const router = Router();
-router.post(
-  "/singUp",
-  upload.single("file"),
-  validators.signupValidator,
-  singUp
-);
+router.post("/singUp", upload, validators.signupValidator, singUp);
 router.post("/login", validators.loginValidator, login);
 router.post("/logout", requireAuthentication, logout);
 router.post("/master-logout", requireAuthentication, logoutAllDevices);
