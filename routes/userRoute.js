@@ -1,10 +1,5 @@
 import { Router } from "express";
 import multer from "multer";
-import { fileTypeFromBuffer, fileTypeFromFile } from "file-type";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import ImageKit from "imagekit";
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";
@@ -23,10 +18,6 @@ import {
   // fetchUserProfile,
   fetchAuthUserProfile,
 } from "../controllers/authController.js";
-
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const upload = multer({
   dest: "uploads/",
   limits: {
@@ -36,43 +27,6 @@ const upload = multer({
     cb(null, true);
   },
 }).single("file");
-// }).single("image");
-
-// // Assuming Multer saved the file and you have access to req.file
-// const filePath = path.join(__dirname, "../uploads/");
-// console.log("File path:", filePath);
-// const fileBuffer = fs.readFileSync(filePath);
-// imagekit
-//   .upload({
-//     // file: fileBuffer // File content to upload
-//     //   ? fileName
-//     //   : "my_file_name.jpg", // Desired file name
-//     file: fileBuffer, // File content (Buffer)
-//     fileName: __filename,
-//     extensions: [
-//       {
-//         name: "google-auto-tagging",
-//         maxTags: 5,
-//         minConfidence: 95,
-//       },
-//     ],
-//     transformation: {
-//       pre: "l-text,i-Imagekit,fs-50,l-end",
-//       post: [
-//         {
-//           type: "transformation",
-//           value: "h-3000",
-//         },
-//       ],
-//     },
-//   })
-//   .then((response) => {
-//     console.log(response);
-//   })
-//   .catch((error) => {
-//     console.log(error);
-//   });
-
 const router = Router();
 router.post("/singUp", upload, validators.signupValidator, singUp);
 router.post("/login", validators.loginValidator, login);

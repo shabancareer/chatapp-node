@@ -5,6 +5,10 @@ import nodemailer from "nodemailer";
 import { generateToken } from "./generateToken.js";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import dotenv from "dotenv";
+import {
+  uploadToImageKit,
+  validateImage,
+} from "../../Image-Verification/fileverification.js";
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET_EMAIL;
 const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY_EMAIL;
@@ -52,6 +56,14 @@ passport.use(
               // verified: true,
             },
           });
+          // let userPhoto = newUser.photo;
+          console.log("GUser:=", newUser.photo);
+
+          // https://lh3.googleusercontent.com/a/ACg8ocLrm5tEh66s9kDmWA7P9DRbVSCiVdUx0MJuCoDK0FqSdJzPuuo=s96-c
+          // const vImg = await validateImage(newUser.photo);
+          // console.log(vImg);
+          // const imageKitResponse = await uploadToImageKit(newUser.photo);
+          // console.log("Google Photo:=", imageKitResponse);
           const emailVerificationToken = jwt.sign(
             { userId: newUser.id },
             JWT_SECRET,
@@ -75,7 +87,7 @@ passport.use(
             subject: "Email Verification",
             html: `Please verify your email by clicking on this link: <a href="${verificationLink}">Verify Email</a>`,
           });
-          console.log("verificationLink:-", verificationLink);
+          // console.log("verificationLink:-", verificationLink);
         } else {
           newUser = userProfile[0];
         }
