@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import ImageKit from "imagekit";
 import path from "path";
 
-const imagekit = new ImageKit({
+export const imagekit = new ImageKit({
   publicKey: "public_xq1sEkV2QjbvRD1jNCxRLClYzgM=",
   privateKey: "private_1tgoUN84u8TC2YZY4s/QPXUZNtA=",
   urlEndpoint: "https://ik.imagekit.io/eaaq3vb8d",

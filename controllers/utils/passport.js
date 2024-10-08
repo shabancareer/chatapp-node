@@ -2,13 +2,13 @@ import passport from "passport";
 import prisma from "../../DB/db.config.js";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import { generateToken } from "./generateToken.js";
+import axios from "axios";
+import path from "path";
+import fs from "fs";
+// import { generateToken } from "./generateToken.js";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import dotenv from "dotenv";
-import {
-  uploadToImageKit,
-  validateImage,
-} from "../../Image-Verification/fileverification.js";
+import { imagekit } from "../../Image-Verification/fileverification.js";
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET_EMAIL;
 const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY_EMAIL;
@@ -26,6 +26,39 @@ const transporter = nodemailer.createTransport({
     pass: process.env.PASS,
   },
 });
+const downloadImage = async (url, filename) => {
+  if (!filename) {
+    throw new Error("Filename is required for downloading the image.");
+  }
+  const filePath = path.join(process.cwd(), "uploads", filename);
+  const writer = fs.createWriteStream(filePath);
+
+  const response = await axios({
+    url,
+    method: "GET",
+    responseType: "stream",
+  });
+
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on("finish", () => resolve(filePath));
+    writer.on("error", reject);
+  });
+};
+// Function to upload the downloaded image to ImageKit
+const uploadToImageKit = async (filePath, fileName) => {
+  if (!filePath) {
+    throw new Error("File path is required for uploading to ImageKit.");
+  }
+
+  const fileBuffer = fs.readFileSync(filePath);
+  const result = await imagekit.upload({
+    file: fileBuffer,
+    fileName: fileName,
+  });
+  return result.url; // Return the ImageKit URL
+};
 passport.use(
   new GoogleStrategy(
     {
@@ -46,19 +79,29 @@ passport.use(
         });
         let newUser;
         if (userProfile.length === 0) {
+          const filename = `google_${profile.id}.jpg`;
+          const filePath = await downloadImage(
+            profile["photos"][0].value,
+            filename
+          );
+          // Upload the image to ImageKit
+          const imageKitUrl = await uploadToImageKit(filePath, filename);
+          console.log("imageKitUrl:=", imageKitUrl);
           newUser = await prisma.user.create({
             data: {
               email: profile["emails"][0].value,
               name: profile["displayName"],
-              photo: profile["photos"][0].value,
+              // photo: profile["photos"][0].value,
+              photo: imageKitUrl, // Save the ImageKit URL in the database
               googleId: profile.id,
               emailVerified: false,
               // verified: true,
             },
           });
+          // Cleanup: Optionally, delete the local file after uploading to ImageKit
+          fs.unlinkSync(filePath);
           // let userPhoto = newUser.photo;
-          console.log("GUser:=", newUser.photo);
-
+          // console.log("GUser:=", userPhoto);
           // https://lh3.googleusercontent.com/a/ACg8ocLrm5tEh66s9kDmWA7P9DRbVSCiVdUx0MJuCoDK0FqSdJzPuuo=s96-c
           // const vImg = await validateImage(newUser.photo);
           // console.log(vImg);
