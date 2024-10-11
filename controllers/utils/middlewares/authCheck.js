@@ -10,7 +10,7 @@ const ACCESS_TOKEN = {
 export const requireAuthentication = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
-    // console.log(authHeader);
+    console.log(authHeader);
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.error(
         "Authorization header is missing or does not start with 'Bearer '"

@@ -1,5 +1,10 @@
 import { Router } from "express";
 import multer from "multer";
+// import { PrismaClient } from "@prisma/client";
+// import path from "path";
+// import fs from "fs";
+// import { FileType } from "file-type";
+
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";
@@ -22,9 +27,6 @@ const upload = multer({
   dest: "uploads/",
   limits: {
     fileSize: 2 * 1024 * 1024,
-  },
-  fileFilter: (req, file, cb) => {
-    cb(null, true);
   },
 }).single("file");
 const router = Router();
