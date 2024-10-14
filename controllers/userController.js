@@ -177,7 +177,7 @@ export const login = async (req, res, next) => {
       );
     }
     // Check if the email is verified
-    if (!user.emailVerified) {
+    if (!userLogin.emailVerified) {
       return res
         .status(403)
         .json({ error: "Please verify your email before logging in." });

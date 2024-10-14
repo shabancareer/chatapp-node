@@ -23,7 +23,7 @@ import {
   // fetchUserProfile,
   fetchAuthUserProfile,
 } from "../controllers/authController.js";
-const upload = multer({
+export const upload = multer({
   dest: "uploads/",
   limits: {
     fileSize: 2 * 1024 * 1024,

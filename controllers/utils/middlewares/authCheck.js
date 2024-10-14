@@ -1,16 +1,18 @@
 import jwt from "jsonwebtoken";
 import AuthorizationError from "../config/errors/AuthorizationError.js";
+import dotenv from "dotenv";
 // const AuthorizationError = require("../config/errors/AuthorizationError.js");
 
+dotenv.config();
 // Pull in Environment variables
 const ACCESS_TOKEN = {
   secret: process.env.AUTH_ACCESS_TOKEN_SECRET,
 };
-
+// console.log("ACCESS_TOKEN:=", ACCESS_TOKEN);
 export const requireAuthentication = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
-    console.log(authHeader);
+    // console.log(authHeader);
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.error(
         "Authorization header is missing or does not start with 'Bearer '"

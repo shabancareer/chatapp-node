@@ -1,11 +1,35 @@
 // import { body } from "express-validator";
 // import prisma from "../DB/db.config.js";
+// import fileType from "fileType";
 import { PrismaClient, Role } from "@prisma/client";
+import { fileTypeFromBuffer } from "file-type";
 const prisma = new PrismaClient();
 
 export const accessChat = async (req, res, next) => {
   try {
+    let folder = "uploads/others";
+    const fileTypeResult = await fileTypeFromBuffer(file.buffer);
+    if (fileTypeResult) {
+      if (fileTypeResult.mime.startsWith("image/")) {
+        folder = "uploads/images";
+      } else if (fileTypeResult.mime.startsWith("video/")) {
+        folder = "uploads/videos";
+      } else if (
+        [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ].includes(fileTypeResult.mime)
+      ) {
+        folder = "uploads/docs";
+      }
+    }
+    const savedFilePath = await saveFile(file, folder);
+    res
+      .status(200)
+      .send({ message: "File uploaded successfully", path: savedFilePath });
     const { receiverId, content } = req.body;
+    console.log("req.file:", req.body);
 
     if (!receiverId || !content) {
       return res
@@ -23,6 +47,7 @@ export const accessChat = async (req, res, next) => {
         data: {
           content: content,
           senderId: req.userId,
+          path: savedFilePath,
           receiverId,
         },
       });
@@ -33,6 +58,7 @@ export const accessChat = async (req, res, next) => {
           content: content,
           senderId: req.userId,
           receiverId: receiverId,
+          path: savedFilePath,
         },
       });
       return res.status(201).json(newChat);

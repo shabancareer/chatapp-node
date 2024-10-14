@@ -12,7 +12,7 @@ import {
 import { upload } from "../controllers/utils/fileupload.js";
 
 const router = Router();
-router.post("/chats", upload, requireAuthentication, accessChat);
+router.post("/chats", requireAuthentication, accessChat);
 router.get("/allChats", requireAuthentication, fetchChats);
 router.post("/group", requireAuthentication, createGroup);
 router.put("/renameGroup", requireAuthentication, renameGroup);
