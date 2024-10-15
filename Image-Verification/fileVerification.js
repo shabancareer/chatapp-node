@@ -14,6 +14,10 @@ export const getFilePath = (file) => {
   const __dirname = path.resolve();
   return path.join(__dirname, "uploads", file.filename);
 };
+export const getFolderPath = (folder) => {
+  const __dirname = path.resolve();
+  return path.join(__dirname, "uploads", folder.filename);
+};
 export const validateImage = async (file) => {
   const filePath = getFilePath(file);
   const fileBuffer = await fs.readFile(filePath);

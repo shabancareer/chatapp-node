@@ -3,12 +3,14 @@
 // import fileType from "fileType";
 import { PrismaClient, Role } from "@prisma/client";
 import { fileTypeFromBuffer } from "file-type";
+import { saveFile } from "./utils/fileupload.js";
 const prisma = new PrismaClient();
 
 export const accessChat = async (req, res, next) => {
+  // console.log("File buffer:", req.file.buffer);
   try {
     let folder = "uploads/others";
-    const fileTypeResult = await fileTypeFromBuffer(file.buffer);
+    const fileTypeResult = await fileTypeFromBuffer(req.file.buffer);
     if (fileTypeResult) {
       if (fileTypeResult.mime.startsWith("image/")) {
         folder = "uploads/images";
@@ -24,13 +26,12 @@ export const accessChat = async (req, res, next) => {
         folder = "uploads/docs";
       }
     }
-    const savedFilePath = await saveFile(file, folder);
+    const savedFilePath = await saveFile(req.file, folder);
+    console.log("savedFilePath=:", savedFilePath);
     res
       .status(200)
       .send({ message: "File uploaded successfully", path: savedFilePath });
     const { receiverId, content } = req.body;
-    console.log("req.file:", req.body);
-
     if (!receiverId || !content) {
       return res
         .status(400)
