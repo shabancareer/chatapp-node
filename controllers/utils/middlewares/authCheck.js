@@ -27,7 +27,6 @@ export const requireAuthentication = async (req, res, next) => {
         }
       );
     }
-
     const accessTokenParts = authHeader.split(" ");
     const aTkn = accessTokenParts[1];
     const decoded = jwt.verify(aTkn, ACCESS_TOKEN.secret);

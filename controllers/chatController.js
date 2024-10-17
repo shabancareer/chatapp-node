@@ -1,41 +1,63 @@
 // import { body } from "express-validator";
 // import prisma from "../DB/db.config.js";
 // import fileType from "fileType";
+import fs from "fs";
+import path from "path";
 import { PrismaClient, Role } from "@prisma/client";
 import { fileTypeFromBuffer } from "file-type";
-import { saveFile } from "./utils/fileupload.js";
+// import { saveFile } from "./utils/fileupload.js";
 const prisma = new PrismaClient();
 
 export const accessChat = async (req, res, next) => {
-  // console.log("File buffer:", req.file.buffer);
+  // console.log("File buffer:", req.file);
   try {
-    let folder = "uploads/others";
-    const fileTypeResult = await fileTypeFromBuffer(req.file.buffer);
-    if (fileTypeResult) {
-      if (fileTypeResult.mime.startsWith("image/")) {
-        folder = "uploads/images";
-      } else if (fileTypeResult.mime.startsWith("video/")) {
-        folder = "uploads/videos";
-      } else if (
-        [
-          "application/pdf",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ].includes(fileTypeResult.mime)
-      ) {
-        folder = "uploads/docs";
-      }
+    const fileBuffer = req.file.buffer;
+    if (!fileBuffer || fileBuffer.length === 0) {
+      return res.status(400).json({ message: "File buffer is empty" });
     }
-    const savedFilePath = await saveFile(req.file, folder);
-    console.log("savedFilePath=:", savedFilePath);
-    res
-      .status(200)
-      .send({ message: "File uploaded successfully", path: savedFilePath });
-    const { receiverId, content } = req.body;
-    if (!receiverId || !content) {
-      return res
-        .status(400)
-        .json({ message: "Receiver ID and content are required" });
+    const fileTypeResult = await fileTypeFromBuffer(fileBuffer);
+    // console.log(fileTypeResult.mime);
+    if (!fileTypeResult) {
+      return res.status(400).json({ message: "Unable to determine file type" });
+    }
+    let folder = "uploadsChat";
+    if (fileTypeResult.mime.startsWith("image/")) {
+      folder = "uploadsChat/Images";
+    } else if (fileTypeResult.mime.startsWith("video/")) {
+      folder = "uploadsChat/Videos";
+    } else if (
+      [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain",
+        "application/octet-stream",
+      ].includes(fileTypeResult.mime) ||
+      fileTypeResult.ext === "inp"
+    ) {
+      folder = "uploadsChat/Docs";
+    } else {
+      return res.status(400).json({ message: "Unsupported file type" });
+    }
+    fs.mkdirSync(folder, { recursive: true });
+    const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
+    const filePath = path.join(folder, uniqueFilename);
+    fs.writeFile(filePath, fileBuffer, (error) => {
+      if (error) {
+        console.error("Error saving file:", err);
+        return res.status(500).json({ message: "Failed to save the file" });
+      }
+    });
+    // Convert receiverId to an integer
+    const receiverId = parseInt(req.body.receiverId, 10);
+    const content = req.body.content;
+    // Validate the converted receiverId and content
+    if (isNaN(receiverId) || !content) {
+      return res.status(400).json({
+        message: "Receiver ID must be a valid number and content is required",
+      });
     }
     const existingChat = await prisma.chat.findFirst({
       where: {
@@ -48,7 +70,7 @@ export const accessChat = async (req, res, next) => {
         data: {
           content: content,
           senderId: req.userId,
-          path: savedFilePath,
+          // File: fileTypeResult,
           receiverId,
         },
       });
@@ -59,10 +81,16 @@ export const accessChat = async (req, res, next) => {
           content: content,
           senderId: req.userId,
           receiverId: receiverId,
-          path: savedFilePath,
+          // File: fileTypeResult,
+          // path: savedFilePath,
         },
       });
-      return res.status(201).json(newChat);
+      return res.status(201).json({
+        message: "File uploaded successfully",
+        path: filePath,
+        fileType: fileTypeResult.mime,
+        newChat,
+      });
     }
   } catch (error) {
     console.error(error);

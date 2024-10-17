@@ -1,18 +1,13 @@
 import { fileTypeFromBuffer } from "file-type";
 import fs from "fs/promises";
-import ImageKit from "imagekit";
+// import ImageKit from "imagekit";
 import path from "path";
-
-export const imagekit = new ImageKit({
-  publicKey: "public_xq1sEkV2QjbvRD1jNCxRLClYzgM=",
-  privateKey: "private_1tgoUN84u8TC2YZY4s/QPXUZNtA=",
-  urlEndpoint: "https://ik.imagekit.io/eaaq3vb8d",
-});
+import { imagekit } from "./fileVerification.js";
 
 // Helper function to get the file's absolute path
 export const getFilePath = (file) => {
   const __dirname = path.resolve();
-  return path.join(__dirname, "uploads", file.filename);
+  return path.join(__dirname, "../uploadsChat", file.filename);
 };
 export const validateImage = async (file) => {
   const filePath = getFilePath(file);
