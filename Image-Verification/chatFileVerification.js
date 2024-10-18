@@ -2,7 +2,7 @@ import { fileTypeFromBuffer } from "file-type";
 import fs from "fs/promises";
 // import ImageKit from "imagekit";
 import path from "path";
-import { imagekit } from "./fileVerification.js";
+// import { imagekit } from "./fileVerification.js";
 
 // Helper function to get the file's absolute path
 export const getFilePath = (file) => {

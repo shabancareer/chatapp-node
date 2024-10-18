@@ -11,47 +11,48 @@ const prisma = new PrismaClient();
 export const accessChat = async (req, res, next) => {
   // console.log("File buffer:", req.file);
   try {
-    const fileBuffer = req.file.buffer;
-    if (!fileBuffer || fileBuffer.length === 0) {
-      return res.status(400).json({ message: "File buffer is empty" });
-    }
-    const fileTypeResult = await fileTypeFromBuffer(fileBuffer);
-    // console.log(fileTypeResult.mime);
-    if (!fileTypeResult) {
-      return res.status(400).json({ message: "Unable to determine file type" });
-    }
-    let folder = "uploadsChat";
-    if (fileTypeResult.mime.startsWith("image/")) {
-      folder = "uploadsChat/Images";
-    } else if (fileTypeResult.mime.startsWith("video/")) {
-      folder = "uploadsChat/Videos";
-    } else if (
-      [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "text/plain",
-        "application/octet-stream",
-      ].includes(fileTypeResult.mime) ||
-      fileTypeResult.ext === "inp"
-    ) {
-      folder = "uploadsChat/Docs";
-    } else {
-      return res.status(400).json({ message: "Unsupported file type" });
-    }
-    fs.mkdirSync(folder, { recursive: true });
-    const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
-    const filePath = path.join(folder, uniqueFilename);
-    fs.writeFile(filePath, fileBuffer, (error) => {
-      if (error) {
-        console.error("Error saving file:", err);
-        return res.status(500).json({ message: "Failed to save the file" });
+    let fileUrl = null;
+    if (req.file) {
+      const fileBuffer = req.file.buffer;
+      if (!fileBuffer || fileBuffer.length === 0) {
+        return res.status(400).json({ message: "File buffer is empty" });
       }
-    });
+      const fileTypeResult = await fileTypeFromBuffer(fileBuffer);
+      // console.log(fileTypeResult.mime);
+      if (!fileTypeResult) {
+        return res.status(400).json({ message: "Invalid file type" });
+      }
+      let folder = "uploadsChat";
+      if (fileTypeResult.mime.startsWith("image/")) {
+        folder = "uploadsChat/Images";
+      } else if (fileTypeResult.mime.startsWith("video/")) {
+        folder = "uploadsChat/Videos";
+      } else if (
+        [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.ms-excel",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "text/plain",
+          "application/octet-stream",
+        ].includes(fileTypeResult.mime) ||
+        fileTypeResult.ext === "inp"
+      ) {
+        folder = "uploadsChat/Docs";
+      } else {
+        return res.status(400).json({ message: "Unsupported file type" });
+      }
+      fs.mkdirSync(folder, { recursive: true });
+      const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
+      const filePath = path.join(folder, uniqueFilename);
+      fs.writeFile(filePath, fileBuffer);
+      fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
+    }
     // Convert receiverId to an integer
     const receiverId = parseInt(req.body.receiverId, 10);
+    console.log(receiverId);
+    console.log(req.userId);
     const content = req.body.content;
     // Validate the converted receiverId and content
     if (isNaN(receiverId) || !content) {
@@ -68,27 +69,64 @@ export const accessChat = async (req, res, next) => {
     if (existingChat) {
       const newMessage = await prisma.chat.create({
         data: {
-          content: content,
           senderId: req.userId,
-          // File: fileTypeResult,
+          content,
           receiverId,
+          // sender: {
+          //   connect: {
+          //     id: req.userId,
+          //   },
+          // },
+          // receiver: {
+          //   connect: {
+          //     id: receiverId,
+          //   },
+          // },
+          ...(fileUrl && {
+            File: {
+              create: {
+                url: fileUrl,
+                type: fileTypeResult.mime,
+              },
+            },
+          }),
         },
       });
-      res.status(201).json(newMessage);
+      res.status(201).json({
+        message: "Chat created/updated successfully",
+        newMessage,
+      });
     } else {
       const newChat = await prisma.chat.create({
         data: {
-          content: content,
-          senderId: req.userId,
-          receiverId: receiverId,
-          // File: fileTypeResult,
-          // path: savedFilePath,
+          content,
+          sender: req.userId,
+          receiverId,
+          sender: {
+            connect: {
+              id: req.userId,
+            },
+          },
+          receiver: {
+            connect: {
+              id: req.body.receiverId,
+            },
+          },
+          ...(fileUrl && {
+            File: {
+              create: {
+                url: fileUrl,
+                type: fileTypeResult.mime,
+              },
+            },
+          }),
         },
       });
       return res.status(201).json({
         message: "File uploaded successfully",
-        path: filePath,
-        fileType: fileTypeResult.mime,
+        // path: filePath,
+        // path: fileUrl,
+        // fileType: fileTypeResult.mime,
         newChat,
       });
     }
@@ -100,11 +138,11 @@ export const accessChat = async (req, res, next) => {
 export const fetchChats = async (req, res, next) => {
   try {
     const authUser = req.userId;
-    console.log(authUser);
+    console.log("Author:=", authUser);
     // Fetch all chats where the authUser is the sender or the receiver
     const fetchAllChats = await prisma.chat.findMany({
       where: {
-        OR: [{ senderId: authUser }, { receiverId: authUser }],
+        OR: [{ sender: authUser }, { receiverId: authUser }],
       },
       include: {
         GroupChat: {

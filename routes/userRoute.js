@@ -4,7 +4,6 @@ import multer from "multer";
 // import path from "path";
 // import fs from "fs";
 // import { FileType } from "file-type";
-
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";

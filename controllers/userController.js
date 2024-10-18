@@ -9,10 +9,10 @@ import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
 import { generateToken, generateResetToken } from "./utils/generateToken.js";
-// import {
-//   validateImage,
-//   uploadToImageKit,
-// } from "../Image-Verification/fileverification.js";
+import {
+  validateImage,
+  uploadToImageKit,
+} from "../Image-Verification/fileVerification.js";
 // import { upload } from "../routes/userRoute.js";
 // import authValidators from "./utils/validators/index.js";
 const JWT_SECRET = process.env.JWT_SECRET_EMAIL;
