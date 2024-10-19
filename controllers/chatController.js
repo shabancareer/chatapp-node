@@ -12,13 +12,13 @@ export const accessChat = async (req, res, next) => {
   // console.log("File buffer:", req.file);
   try {
     let fileUrl = null;
+    let fileTypeResult = null;
     if (req.file) {
       const fileBuffer = req.file.buffer;
       if (!fileBuffer || fileBuffer.length === 0) {
         return res.status(400).json({ message: "File buffer is empty" });
       }
-      const fileTypeResult = await fileTypeFromBuffer(fileBuffer);
-      // console.log(fileTypeResult.mime);
+      fileTypeResult = await fileTypeFromBuffer(fileBuffer);
       if (!fileTypeResult) {
         return res.status(400).json({ message: "Invalid file type" });
       }
@@ -46,13 +46,19 @@ export const accessChat = async (req, res, next) => {
       fs.mkdirSync(folder, { recursive: true });
       const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
       const filePath = path.join(folder, uniqueFilename);
-      fs.writeFile(filePath, fileBuffer);
-      fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
+      // fs.writeFile(filePath, fileBuffer);
+      // fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
+      fs.writeFile(filePath, fileBuffer, (err) => {
+        if (err) {
+          console.error("Error writing file:", err);
+          return res.status(500).json({ message: "File write error" });
+        }
+        console.log("File written successfully");
+        fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
+      });
     }
     // Convert receiverId to an integer
     const receiverId = parseInt(req.body.receiverId, 10);
-    console.log(receiverId);
-    console.log(req.userId);
     const content = req.body.content;
     // Validate the converted receiverId and content
     if (isNaN(receiverId) || !content) {
@@ -69,39 +75,9 @@ export const accessChat = async (req, res, next) => {
     if (existingChat) {
       const newMessage = await prisma.chat.create({
         data: {
-          senderId: req.userId,
-          content,
-          receiverId,
-          // sender: {
-          //   connect: {
-          //     id: req.userId,
-          //   },
-          // },
-          // receiver: {
-          //   connect: {
-          //     id: receiverId,
-          //   },
-          // },
-          ...(fileUrl && {
-            File: {
-              create: {
-                url: fileUrl,
-                type: fileTypeResult.mime,
-              },
-            },
-          }),
-        },
-      });
-      res.status(201).json({
-        message: "Chat created/updated successfully",
-        newMessage,
-      });
-    } else {
-      const newChat = await prisma.chat.create({
-        data: {
-          content,
           sender: req.userId,
-          receiverId,
+          content,
+          // receiverId,
           sender: {
             connect: {
               id: req.userId,
@@ -109,21 +85,51 @@ export const accessChat = async (req, res, next) => {
           },
           receiver: {
             connect: {
-              id: req.body.receiverId,
+              id: receiverId,
             },
           },
           ...(fileUrl && {
             File: {
               create: {
                 url: fileUrl,
-                type: fileTypeResult.mime,
+                fileType: fileTypeResult.mime,
+              },
+            },
+          }),
+        },
+      });
+      res.status(201).json({
+        message: "Chat created successfully",
+        newMessage,
+      });
+    } else {
+      const newChat = await prisma.chat.create({
+        data: {
+          content,
+          sender: req.userId,
+          // receiverId,
+          sender: {
+            connect: {
+              id: userId,
+            },
+          },
+          receiver: {
+            connect: {
+              id: receiverId,
+            },
+          },
+          ...(fileUrl && {
+            File: {
+              create: {
+                url: fileUrl,
+                fileType: fileTypeResult.mime,
               },
             },
           }),
         },
       });
       return res.status(201).json({
-        message: "File uploaded successfully",
+        message: "Chat updated successfully",
         // path: filePath,
         // path: fileUrl,
         // fileType: fileTypeResult.mime,
@@ -218,6 +224,75 @@ export const createGroup = async (req, res, next) => {
     });
   }
   try {
+    let fileUrl = null;
+    let fileTypeResult = null;
+    // Check for file upload
+    if (req.file) {
+      const fileBuffer = req.file.buffer;
+      if (!fileBuffer || fileBuffer.length === 0) {
+        return res.status(400).json({ message: "File buffer is empty" });
+      }
+      fileTypeResult = await fileTypeFromBuffer(fileBuffer);
+      if (!fileTypeResult) {
+        return res.status(400).json({ message: "Invalid file type" });
+      }
+      let folder = "uploadsChat";
+      if (fileTypeResult.mime.startsWith("image/")) {
+        folder = "uploadsChat/Images";
+      } else if (fileTypeResult.mime.startsWith("video/")) {
+        folder = "uploadsChat/Videos";
+      } else if (
+        [].includes(fileTypeResult.mime) ||
+        fileTypeResult.ext === "inp"
+      ) {
+        folder = "uploadsChat/Docs";
+      } else {
+        return res.status(400).json({ message: "Unsupported file type" });
+      }
+      fs.mkdirSync(folder, { recursive: true });
+      const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
+      const filePath = path.join(folder, uniqueFilename);
+      fs.writeFile(filePath, fileBuffer, (error) => {
+        if (error) {
+          console.error("Error writing file:", err);
+          return res.status(500).json({ message: "File write error" });
+        }
+        console.log("File written successfully");
+        fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
+      });
+    }
+    // const groupChat = await prisma.group.create({
+    //   data: {
+    //     groupName,
+    //     ownerId,
+    //     GroupMember: {
+    //       create: [
+    //         {
+    //           User: { connect: { id: ownerId } },
+    //           role: Role.ADMIN,
+    //         },
+    //         ...users.map((userId) => ({
+    //           User: { connect: { id: userId } },
+    //         })),
+    //       ],
+    //     },
+    // groupChats: {
+    //   create: users.map((rid) => ({
+    //     chat: {
+    //       create: {
+    //         content,
+    //         senderId: ownerId,
+    //         receiverId: rid,
+    //       },
+    //     },
+    // })),
+    // }
+    // },
+    // });
+
+    // Create associated chats for each member of the group
+
+    // Create the group and add the members
     const groupChat = await prisma.group.create({
       data: {
         groupName,
@@ -233,6 +308,7 @@ export const createGroup = async (req, res, next) => {
             })),
           ],
         },
+        // Create an initial message associated with the group
         groupChats: {
           create: users.map((rid) => ({
             chat: {
@@ -240,13 +316,24 @@ export const createGroup = async (req, res, next) => {
                 content,
                 senderId: ownerId,
                 receiverId: rid,
+                ...(fileUrl && {
+                  File: {
+                    create: {
+                      url: fileUrl,
+                      fileType: fileTypeResult.mime,
+                    },
+                  },
+                }),
               },
             },
           })),
         },
       },
     });
-    res.status(201).json({ groupChat });
+    res.status(201).json({
+      message: "Message sent to group chat successfully",
+      groupChat,
+    });
   } catch (error) {
     res.status(500).json({
       message: "An error occurred while creating the group.",

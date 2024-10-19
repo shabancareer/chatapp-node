@@ -14,7 +14,7 @@ import { upload } from "../controllers/utils/fileupload.js";
 const router = Router();
 router.post("/chats", upload, requireAuthentication, accessChat);
 router.get("/allChats", requireAuthentication, fetchChats);
-router.post("/group", requireAuthentication, createGroup);
+router.post("/group", upload, requireAuthentication, createGroup);
 router.put("/renameGroup", requireAuthentication, renameGroup);
 router.put("/removeUser", requireAuthentication, removeUser);
 router.put("/deleteGroup", requireAuthentication, deleteGroup);
