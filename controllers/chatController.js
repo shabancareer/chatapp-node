@@ -1,6 +1,3 @@
-// import { body } from "express-validator";
-// import prisma from "../DB/db.config.js";
-// import fileType from "fileType";
 import fs from "fs";
 import path from "path";
 import { PrismaClient, Role } from "@prisma/client";
@@ -9,7 +6,6 @@ import { fileTypeFromBuffer } from "file-type";
 const prisma = new PrismaClient();
 
 export const accessChat = async (req, res, next) => {
-  // console.log("File buffer:", req.file);
   try {
     let fileUrl = null;
     let fileTypeResult = null;
@@ -46,14 +42,11 @@ export const accessChat = async (req, res, next) => {
       fs.mkdirSync(folder, { recursive: true });
       const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
       const filePath = path.join(folder, uniqueFilename);
-      // fs.writeFile(filePath, fileBuffer);
-      // fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
       fs.writeFile(filePath, fileBuffer, (err) => {
         if (err) {
           console.error("Error writing file:", err);
           return res.status(500).json({ message: "File write error" });
         }
-        console.log("File written successfully");
         fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
       });
     }
@@ -198,7 +191,7 @@ export const fetchChats = async (req, res, next) => {
 };
 export const createGroup = async (req, res, next) => {
   const ownerId = req.userId;
-  const { groupName, users, content } = req.body;
+  const { groupName, users } = req.body;
   if (!Array.isArray(users) || users.length < 1) {
     return res.status(400).json({
       message: "At least one user must be in Group!...",
@@ -224,43 +217,43 @@ export const createGroup = async (req, res, next) => {
     });
   }
   try {
-    let fileUrl = null;
-    let fileTypeResult = null;
+    // let fileUrl = null;
+    // let fileTypeResult = null;
     // Check for file upload
-    if (req.file) {
-      const fileBuffer = req.file.buffer;
-      if (!fileBuffer || fileBuffer.length === 0) {
-        return res.status(400).json({ message: "File buffer is empty" });
-      }
-      fileTypeResult = await fileTypeFromBuffer(fileBuffer);
-      if (!fileTypeResult) {
-        return res.status(400).json({ message: "Invalid file type" });
-      }
-      let folder = "uploadsChat";
-      if (fileTypeResult.mime.startsWith("image/")) {
-        folder = "uploadsChat/Images";
-      } else if (fileTypeResult.mime.startsWith("video/")) {
-        folder = "uploadsChat/Videos";
-      } else if (
-        [].includes(fileTypeResult.mime) ||
-        fileTypeResult.ext === "inp"
-      ) {
-        folder = "uploadsChat/Docs";
-      } else {
-        return res.status(400).json({ message: "Unsupported file type" });
-      }
-      fs.mkdirSync(folder, { recursive: true });
-      const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
-      const filePath = path.join(folder, uniqueFilename);
-      fs.writeFile(filePath, fileBuffer, (error) => {
-        if (error) {
-          console.error("Error writing file:", err);
-          return res.status(500).json({ message: "File write error" });
-        }
-        console.log("File written successfully");
-        fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
-      });
-    }
+    // if (req.file) {
+    //   const fileBuffer = req.file.buffer;
+    //   if (!fileBuffer || fileBuffer.length === 0) {
+    //     return res.status(400).json({ message: "File buffer is empty" });
+    //   }
+    //   fileTypeResult = await fileTypeFromBuffer(fileBuffer);
+    //   if (!fileTypeResult) {
+    //     return res.status(400).json({ message: "Invalid file type" });
+    //   }
+    //   let folder = "uploadsChat";
+    //   if (fileTypeResult.mime.startsWith("image/")) {
+    //     folder = "uploadsChat/Images";
+    //   } else if (fileTypeResult.mime.startsWith("video/")) {
+    //     folder = "uploadsChat/Videos";
+    //   } else if (
+    //     [].includes(fileTypeResult.mime) ||
+    //     fileTypeResult.ext === "inp"
+    //   ) {
+    //     folder = "uploadsChat/Docs";
+    //   } else {
+    //     return res.status(400).json({ message: "Unsupported file type" });
+    //   }
+    //   fs.mkdirSync(folder, { recursive: true });
+    //   const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
+    //   const filePath = path.join(folder, uniqueFilename);
+    //   fs.writeFile(filePath, fileBuffer, (error) => {
+    //     if (error) {
+    //       console.error("Error writing file:", err);
+    //       return res.status(500).json({ message: "File write error" });
+    //     }
+    //     console.log("File written successfully");
+    //     fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
+    //   });
+    // }
     // const groupChat = await prisma.group.create({
     //   data: {
     //     groupName,
@@ -309,34 +302,156 @@ export const createGroup = async (req, res, next) => {
           ],
         },
         // Create an initial message associated with the group
-        groupChats: {
-          create: users.map((rid) => ({
-            chat: {
-              create: {
-                content,
-                senderId: ownerId,
-                receiverId: rid,
-                ...(fileUrl && {
-                  File: {
-                    create: {
-                      url: fileUrl,
-                      fileType: fileTypeResult.mime,
-                    },
-                  },
-                }),
-              },
-            },
-          })),
-        },
+        // groupChats: {
+        //   create: users.map((rid) => ({
+        //     chat: {
+        //       create: {
+        //         content,
+        //         senderId: ownerId,
+        //         receiverId: rid,
+        //         ...(fileUrl && {
+        //           File: {
+        //             create: {
+        //               url: fileUrl,
+        //               fileType: fileTypeResult.mime,
+        //             },
+        //           },
+        //         }),
+        //       },
+        //     },
+        //   })),
+        // },
       },
     });
     res.status(201).json({
-      message: "Message sent to group chat successfully",
+      message: "Group has created successfully",
       groupChat,
     });
   } catch (error) {
     res.status(500).json({
       message: "An error occurred while creating the group.",
+    });
+    next(error);
+  }
+};
+export const sendMessageToGroup = async (req, res, next) => {
+  const senderId = req.userId;
+  const { groupId, content } = req.body;
+  if (!groupId) {
+    return res.status(400).json({
+      message: "Group ID is required",
+    });
+  } else if (!content) {
+    return res.status(400).json({
+      message: "Message content cannot be empty",
+    });
+  }
+  try {
+    // Check if the group exists and if the user is a member
+    const group = await prisma.group.findUnique({
+      where: { id: parseInt(groupId) },
+      include: {
+        GroupMember: true,
+      },
+    });
+    if (!group) {
+      return res.status(404).json({
+        message: "Group not found",
+      });
+    }
+    // Ensure the sender is part of the group
+    const isMember = group.GroupMember.some(
+      (member) => member.userId === senderId
+    );
+    if (!isMember) {
+      return res.status(403).json({
+        message: "You are not a member of this group",
+      });
+    }
+    const receiverIds = group.GroupMember.map((member) => member.userId).filter(
+      (userId) => userId !== senderId
+    );
+    let fileUrl = null;
+    let fileTypeResult = null;
+    if (req.file) {
+      const fileBuffer = req.file.buffer;
+      if (!fileBuffer || fileBuffer.length === 0) {
+        return res.status(400).json({ message: "File buffer is empty" });
+      }
+      fileTypeResult = await fileTypeFromBuffer(fileBuffer);
+      if (!fileTypeResult) {
+        return res.status(400).json({ message: "Invalid file type" });
+      }
+      let folder = "uploadsChat";
+      if (fileTypeResult.mime.startsWith("image/")) {
+        folder = "uploadsChat/Images";
+      } else if (fileTypeResult.mime.startsWith("video/")) {
+        folder = "uploadsChat/Videos";
+      } else if (
+        [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.ms-excel",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "text/plain",
+          "application/octet-stream",
+        ].includes(fileTypeResult.mime) ||
+        fileTypeResult.ext === "inp"
+      ) {
+        folder = "uploadsChat/Docs";
+      } else {
+        return res.status(400).json({ message: "Unsupported file type" });
+      }
+      fs.mkdirSync(folder, { recursive: true });
+      const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
+      const filePath = path.join(folder, uniqueFilename);
+      fs.writeFile(filePath, fileBuffer, (error) => {
+        if (error) {
+          console.error("Error writing file:", err);
+          return res.status(500).json({ message: "File write error" });
+        }
+        console.log("File written successfully");
+        fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
+      });
+    }
+    // Now create a chat message for each group member (excluding the sender)
+    const newChats = await Promise.all(
+      receiverIds.map(async (receiverId) => {
+        return await prisma.chat.create({
+          data: {
+            content,
+            senderId,
+            receiverId, // Assign the current receiverId (each member except the sender)
+            GroupChat: {
+              create: {
+                groupId: parseInt(groupId, 10), // Link the message to the group
+              },
+            },
+            // Add the file if uploaded
+            ...(fileUrl && {
+              File: {
+                create: {
+                  url: fileUrl,
+                  fileType: fileTypeResult.mime,
+                },
+              },
+            }),
+          },
+          include: {
+            File: true, // Include file information in the response
+            GroupChat: true, // Include group chat info
+          },
+        });
+      })
+    );
+    res.status(201).json({
+      message: "Message sent successfully",
+      newChats,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "An error occurred while sending the message",
     });
     next(error);
   }
