@@ -51,7 +51,9 @@ export const accessChat = async (req, res, next) => {
       });
     }
     // Convert receiverId to an integer
-    const receiverId = parseInt(req.body.receiverId, 10);
+    const receiverId = parseInt(req.body.receiverId);
+    // const receiverId = req.body.receiverId;
+    console.log("receiverId=:", receiverId);
     const content = req.body.content;
     // Validate the converted receiverId and content
     if (isNaN(receiverId) || !content) {
@@ -137,11 +139,14 @@ export const accessChat = async (req, res, next) => {
 export const fetchChats = async (req, res, next) => {
   try {
     const authUser = req.userId;
-    console.log("Author:=", authUser);
+    // console.log("Author:=", authUser);
     // Fetch all chats where the authUser is the sender or the receiver
     const fetchAllChats = await prisma.chat.findMany({
       where: {
-        OR: [{ sender: authUser }, { receiverId: authUser }],
+        OR: [
+          { senderId: authUser }, // Use senderId instead of sender
+          { receiverId: authUser },
+        ],
       },
       include: {
         GroupChat: {
@@ -150,7 +155,7 @@ export const fetchChats = async (req, res, next) => {
               include: {
                 GroupMember: {
                   include: {
-                    user: {
+                    User: {
                       select: { name: true, photo: true, email: true },
                     },
                   },
@@ -174,9 +179,9 @@ export const fetchChats = async (req, res, next) => {
           ...chat,
           groupName: chat.GroupChat.group.groupName,
           groupMembers: chat.GroupChat.group.GroupMember.map((member) => ({
-            userId: member.user.id,
-            username: member.user.username, // Assuming your user model has a username field
-            email: member.user.email, // Assuming your user model has an email field
+            userId: member.User.id,
+            username: member.User.username, // Assuming your user model has a username field
+            email: member.User.email, // Assuming your user model has an email field
           })),
         };
       }
