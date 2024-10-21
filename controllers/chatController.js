@@ -52,8 +52,6 @@ export const accessChat = async (req, res, next) => {
     }
     // Convert receiverId to an integer
     const receiverId = parseInt(req.body.receiverId);
-    // const receiverId = req.body.receiverId;
-    console.log("receiverId=:", receiverId);
     const content = req.body.content;
     // Validate the converted receiverId and content
     if (isNaN(receiverId) || !content) {
@@ -61,13 +59,26 @@ export const accessChat = async (req, res, next) => {
         message: "Receiver ID must be a valid number and content is required",
       });
     }
+    // Ensure sender and receiver are different
+    if (req.userId === receiverId) {
+      return res.status(400).json({
+        message: "Sender and receiver cannot be the same",
+      });
+    }
     const existingChat = await prisma.chat.findFirst({
+      // where: {
+      //   // AND: [{ userId: senderId }, { receiverId: receiverId }],
+      //   AND: [{ senderId: req.userId }, { receiverId: receiverId }],
+      // },
       where: {
-        // AND: [{ userId: senderId }, { receiverId: receiverId }],
-        AND: [{ senderId: req.userId }, { receiverId: receiverId }],
+        OR: [
+          { senderId: req.userId, receiverId: receiverId },
+          { senderId: receiverId, receiverId: req.userId },
+        ],
       },
     });
-    if (existingChat) {
+    // console.log(existingChat);
+    if (!existingChat) {
       const newMessage = await prisma.chat.create({
         data: {
           sender: req.userId,
@@ -105,7 +116,7 @@ export const accessChat = async (req, res, next) => {
           // receiverId,
           sender: {
             connect: {
-              id: userId,
+              id: req.userId,
             },
           },
           receiver: {
