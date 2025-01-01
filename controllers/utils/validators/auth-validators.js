@@ -45,6 +45,13 @@ export const loginValidator = [
 
   body("password").notEmpty().withMessage("Password CANNOT be empty"),
 ];
+export const googleLoginValidator = [
+  body("email").trim().notEmpty().withMessage("Email CANNOT be empty"),
+  // .bail()
+  // .isEmail()
+  // .withMessage("Email is invalid"),
+  // body("password").notEmpty().withMessage("Password CANNOT be empty"),
+];
 
 export const forgotPasswordValidator = [
   body("email")

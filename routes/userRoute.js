@@ -16,6 +16,7 @@ import {
   forgotPassword,
   resetPassword,
   fetchAllProfiles,
+  googleLogin,
   // emailVerification,
 } from "../controllers/userController.js";
 import {
@@ -31,6 +32,7 @@ export const upload = multer({
 const router = Router();
 router.post("/singUp", upload, validators.signupValidator, singUp);
 router.post("/login", validators.loginValidator, login);
+router.post("/googleLogin", googleLogin);
 router.post("/logout", requireAuthentication, logout);
 router.post("/master-logout", requireAuthentication, logoutAllDevices);
 router.post("/reauth", refreshAccess);
@@ -40,6 +42,11 @@ router.patch(
   validators.resetPasswordValidator,
   resetPassword
 );
+// router.get(
+//   "/resetpass/:resetToken",
+//   validators.resetPasswordValidator,
+//   resetPassword
+// );
 router.get("/me", requireAuthentication, fetchAuthUserProfile);
 router.get("/allusers", requireAuthentication, fetchAllProfiles);
 

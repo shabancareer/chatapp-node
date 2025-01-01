@@ -7,6 +7,7 @@ import crypto from "crypto";
 // };
 export const generateToken = async (user) => {
   try {
+    // console.log("G:-", user);
     if (!user || !user.id) {
       throw new Error("Invalid user object or missing user ID");
     }

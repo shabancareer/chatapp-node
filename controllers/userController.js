@@ -43,10 +43,18 @@ export const singUp = async (req, res, next) => {
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
+    // Check if user already exists in the database
+    const existingUser = await prisma.user.findUnique({
+      where: { email: req.body.email },
+    });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
     // Validate the uploaded image file
     if (!req.file) {
       return res.status(400).json({ message: "No image uploaded" });
     }
+    // console.log(req.file);
     // Image validation using fileTypeFromBuffer
     const isValidImage = await validateImage(req.file);
     if (!isValidImage) {
@@ -56,7 +64,6 @@ export const singUp = async (req, res, next) => {
     }
     const imageKitResponse = await uploadToImageKit(req.file);
     const imageUrl = imageKitResponse.url;
-    // const { name, email, password, photo } = req.body;
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const newUser = await prisma.user.create({
       data: {
@@ -75,8 +82,6 @@ export const singUp = async (req, res, next) => {
         expiresIn: TOKEN_EXPIRY,
       }
     );
-    // console.log(emailVerificationToken);
-    // Save the verification token in tokenEmailVerified table
     await prisma.tokenEmailVerified.create({
       data: {
         token: emailVerificationToken,
@@ -111,7 +116,7 @@ export const singUp = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
-    console.log(error);
+    // console.log(error);
   } finally {
     await prisma.$disconnect();
   }
@@ -136,7 +141,7 @@ export const emailVerification = async (req, res) => {
         expiresAt: true,
       },
     });
-    console.log("tokenRecord:-", tokenRecord);
+    // console.log("tokenRecord:-", tokenRecord);
     if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
       return res.status(400).json({ error: "Token is invalid or expired." });
     }
@@ -150,11 +155,13 @@ export const emailVerification = async (req, res) => {
     await prisma.tokenEmailVerified.delete({
       where: { token: token },
     });
-    res.send("Email verified successfully. You can now log in.");
+    // res.send("Email verified successfully. You can now login.");
+    // res.redirect(`http://localhost:5173`);
+    res.redirect(`http://localhost:5173?emailVerified=true`);
   } catch (error) {
     console.error(error);
     res.json({
-      message: "Email verified successfully. You can now log in.",
+      message: "Email verified successfully.",
       redirectUrl: "/login",
     });
   }
@@ -208,7 +215,47 @@ export const login = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
-
+export const googleLogin = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
+    }
+    const { email } = req.body;
+    const userLogin = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (!userLogin) {
+      throw new Error(
+        "E-mail Cannot find user with these credentials. Please singUp first"
+      );
+    }
+    // Check if the email is verified
+    if (!userLogin.emailVerified) {
+      return res
+        .status(403)
+        .json({ error: "Please verify your email before logging in." });
+    }
+    const userLoginTokens = await generateToken(userLogin, res);
+    const { accessToken, refreshToken } = userLoginTokens;
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
+    return res.status(201).json({
+      success: true,
+      data: userLogin,
+      accessToken,
+      msg: "User login.",
+    });
+  } catch (error) {
+    next(error);
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 export const fetchAllProfiles = async (req, res, next) => {
   try {
     const keyword = req.query.search || "";
@@ -237,7 +284,6 @@ export const fetchAllProfiles = async (req, res, next) => {
     next(error);
   }
 };
-
 export const logout = async (req, res, next) => {
   try {
     const userId = req.userId;
@@ -286,7 +332,6 @@ export const logout = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
-
 export const logoutAllDevices = async (req, res, next) => {
   try {
     const userId = req.userId;
@@ -324,7 +369,6 @@ export const logoutAllDevices = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
-
 export const refreshAccess = async (req, res, next) => {
   try {
     const cookies = req.cookies;
@@ -426,18 +470,18 @@ export const forgotPassword = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { email },
     });
-    if (!user) throw new CustomError("Email not sent", 404);
+    if (!user) throw new CustomError("Email not sent!.", 404);
     let resetToken = await generateResetToken(user);
     resetToken = encodeURIComponent(resetToken);
-
+    // console.log(resetToken);
     const resetPath =
-      req.header("X-reset-base") || "http://localhost:8080//resetpass";
-    const origin = req.header("Origin") || "http://localhost:8080/";
+      req.header("X-reset-base") || "http://localhost:5173/resetpass";
+    const origin = req.header("Origin") || "http://localhost:5173/";
 
     const resetUrl = resetPath
       ? `${resetPath}/${resetToken}`
       : `${origin}/resetpass/${resetToken}`;
-
+    // console.log(resetUrl);
     const message = `
             <h1>You have requested to change your password</h1>
             <p>You are receiving this because someone(hopefully you) has requested to reset password for your account.<br/>
@@ -456,7 +500,7 @@ export const forgotPassword = async (req, res, next) => {
               <small>
                 <em>
                   This password reset link will <strong>expire after ${
-                    process.env.RESET_PASSWORD_TOKEN_EXPIRY_MINS || 5
+                    process.env.RESET_PASSWORD_TOKEN_EXPIRY_MINS || 10
                   } minutes.</strong>
                 </em>
               <small/>
@@ -479,7 +523,7 @@ export const forgotPassword = async (req, res, next) => {
         where: { email },
         data: { resetpasswordtoken: null, resetpasswordtokenexpiry: null },
       });
-      throw new CustomError("Email not sent", 500);
+      throw new CustomError("Email not sent!...", 500);
     }
   } catch (error) {
     next(error);
@@ -489,6 +533,7 @@ export const forgotPassword = async (req, res, next) => {
 };
 
 export const resetPassword = async (req, res, next) => {
+  console.log(req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
