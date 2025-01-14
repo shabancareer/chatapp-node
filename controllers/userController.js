@@ -156,8 +156,8 @@ export const emailVerification = async (req, res) => {
       where: { token: token },
     });
     // res.send("Email verified successfully. You can now login.");
-    // res.redirect(`http://localhost:5173`);
-    res.redirect(`http://localhost:5173?emailVerified=true`);
+    res.redirect(`http://localhost:5173`);
+    // res.redirect(`http://localhost:5173?emailVerified=true`);
   } catch (error) {
     console.error(error);
     res.json({
@@ -167,6 +167,7 @@ export const emailVerification = async (req, res) => {
   }
 };
 export const login = async (req, res, next) => {
+  // console.log("Top Data=", req.body);
   try {
     const errors = validationResult(req);
     // console.log(errors);
@@ -177,7 +178,7 @@ export const login = async (req, res, next) => {
     const userLogin = await prisma.user.findUnique({
       where: { email },
     });
-    // console.log(userLogin);
+    console.log(userLogin);
     if (!userLogin) {
       throw new Error(
         "E-mail Cannot find user with these credentials. Please singUp first"
@@ -189,8 +190,8 @@ export const login = async (req, res, next) => {
         .status(403)
         .json({ error: "Please verify your email before logging in." });
     }
-    const isMatch = bcrypt.compare(password, userLogin.password);
-    // const isMatch = await bcrypt.compare(password, userLogin.password);
+    // const isMatch = bcrypt.compare(password, userLogin.password);
+    const isMatch = await bcrypt.compare(password, userLogin.password);
 
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -442,7 +443,6 @@ export const refreshAccess = async (req, res, next) => {
       secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
     });
-
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       sameSite: "None",
@@ -473,7 +473,7 @@ export const forgotPassword = async (req, res, next) => {
     if (!user) throw new CustomError("Email not sent!.", 404);
     let resetToken = await generateResetToken(user);
     resetToken = encodeURIComponent(resetToken);
-    // console.log(resetToken);
+
     const resetPath =
       req.header("X-reset-base") || "http://localhost:5173/resetpass";
     const origin = req.header("Origin") || "http://localhost:5173/";
@@ -481,7 +481,7 @@ export const forgotPassword = async (req, res, next) => {
     const resetUrl = resetPath
       ? `${resetPath}/${resetToken}`
       : `${origin}/resetpass/${resetToken}`;
-    // console.log(resetUrl);
+
     const message = `
             <h1>You have requested to change your password</h1>
             <p>You are receiving this because someone(hopefully you) has requested to reset password for your account.<br/>
@@ -531,9 +531,7 @@ export const forgotPassword = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
-
 export const resetPassword = async (req, res, next) => {
-  console.log(req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
