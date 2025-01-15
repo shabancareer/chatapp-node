@@ -38,6 +38,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const singUp = async (req, res, next) => {
+  console.log(req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -99,7 +100,7 @@ export const singUp = async (req, res, next) => {
       html: `Please verify your email by clicking on this link: <a href="${verificationLink}">Verify Email</a>`,
     });
     const tokens = await generateToken(newUser, res);
-    // console.log("Token:-", token);
+    console.log("Token from controller:-", tokens);
     const { accessToken, refreshToken } = tokens;
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -167,7 +168,7 @@ export const emailVerification = async (req, res) => {
   }
 };
 export const login = async (req, res, next) => {
-  // console.log("Top Data=", req.body);
+  console.log("Top Data form=", req.body);
   try {
     const errors = validationResult(req);
     // console.log(errors);
@@ -178,7 +179,7 @@ export const login = async (req, res, next) => {
     const userLogin = await prisma.user.findUnique({
       where: { email },
     });
-    console.log(userLogin);
+    // console.log(userLogin);
     if (!userLogin) {
       throw new Error(
         "E-mail Cannot find user with these credentials. Please singUp first"
@@ -217,6 +218,7 @@ export const login = async (req, res, next) => {
   }
 };
 export const googleLogin = async (req, res, next) => {
+  console.log("User login with Google=", req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -227,6 +229,7 @@ export const googleLogin = async (req, res, next) => {
       where: { email },
     });
     if (!userLogin) {
+      // console.log("userLogin with Google=", userLogin);
       throw new Error(
         "E-mail Cannot find user with these credentials. Please singUp first"
       );
@@ -237,14 +240,18 @@ export const googleLogin = async (req, res, next) => {
         .status(403)
         .json({ error: "Please verify your email before logging in." });
     }
-    const userLoginTokens = await generateToken(userLogin, res);
+    const userLoginTokens = await generateToken(userLogin);
+    // console.log(userLoginTokens);
     const { accessToken, refreshToken } = userLoginTokens;
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
+      // sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       sameSite: "None",
       secure: true,
+      // secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
     });
+    // console.log("Refresh token cookie set", refreshToken);
     return res.status(201).json({
       success: true,
       data: userLogin,

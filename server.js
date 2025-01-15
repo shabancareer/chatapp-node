@@ -63,25 +63,25 @@ app.get(
   passport.authenticate("google", { failureRedirect: "/error" }),
   async (req, res) => {
     try {
-      const tokens = await generateToken(req.user);
-      // console.log(tokens);
-      const { accessToken, refreshToken } = tokens;
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        sameSite: "None",
-        secure: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        sameSite: "None",
-        secure: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-      // const redirectUrl = `http://localhost:5173/auth/callback?newUser=${req.user.isNewUser}`;
-      // res.redirect(redirectUrl);
-      const redirectUrl = `http://localhost:5173/auth/callback?newUser=${req.user.isNewUser}&token=${accessToken}`;
+      // const tokens = await generateToken(req.user);
+      // // console.log(tokens);
+      // const { accessToken, refreshToken } = tokens;
+      // res.cookie("refreshToken", refreshToken, {
+      //   httpOnly: true,
+      //   sameSite: "None",
+      //   secure: true,
+      //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      // });
+      // res.cookie("accessToken", accessToken, {
+      //   httpOnly: true,
+      //   sameSite: "None",
+      //   secure: true,
+      //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      // });
+      const redirectUrl = `http://localhost:5173/auth/callback?newUser=${req.user.isNewUser}`;
       res.redirect(redirectUrl);
+      // const redirectUrl = `http://localhost:5173/auth/callback?newUser=${req.user.isNewUser}&token=${accessToken}`;
+      // res.redirect(redirectUrl);
       // console.log("Redirecting to:", redirectUrl);
     } catch (error) {
       console.error("Error during callback:", error);
