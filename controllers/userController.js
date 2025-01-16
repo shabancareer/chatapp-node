@@ -38,7 +38,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const singUp = async (req, res, next) => {
-  console.log(req.body);
+  // console.log(req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -99,19 +99,19 @@ export const singUp = async (req, res, next) => {
       subject: "Email Verification",
       html: `Please verify your email by clicking on this link: <a href="${verificationLink}">Verify Email</a>`,
     });
-    const tokens = await generateToken(newUser, res);
-    console.log("Token from controller:-", tokens);
-    const { accessToken, refreshToken } = tokens;
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    });
+    // const tokens = await generateToken(newUser, res);
+    // console.log("Token from controller:-", tokens);
+    // const { accessToken, refreshToken } = tokens;
+    // res.cookie("refreshToken", refreshToken, {
+    //   httpOnly: true,
+    //   sameSite: "None",
+    //   secure: true,
+    //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    // });
     return res.status(201).json({
       success: true,
       data: newUser,
-      accessToken,
+      // accessToken,
       msg: "user registered successfully and Verification email sent. Please check your inbox!...",
       // res.json({ message: "Verification email sent. Please check your inbox." });
     });
@@ -168,7 +168,7 @@ export const emailVerification = async (req, res) => {
   }
 };
 export const login = async (req, res, next) => {
-  console.log("Top Data form=", req.body);
+  // console.log("Top Data form=", req.body);
   try {
     const errors = validationResult(req);
     // console.log(errors);
@@ -218,7 +218,7 @@ export const login = async (req, res, next) => {
   }
 };
 export const googleLogin = async (req, res, next) => {
-  console.log("User login with Google=", req.body);
+  // console.log("User login with Google=", req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -245,11 +245,11 @@ export const googleLogin = async (req, res, next) => {
     const { accessToken, refreshToken } = userLoginTokens;
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      // sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       sameSite: "None",
       secure: true,
-      // secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      // secure: false,
+      // sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
     // console.log("Refresh token cookie set", refreshToken);
     return res.status(201).json({
