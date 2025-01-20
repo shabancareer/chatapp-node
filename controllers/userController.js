@@ -199,6 +199,9 @@ export const login = async (req, res, next) => {
     }
     const userLoginTokens = await generateToken(userLogin, res);
     const { accessToken, refreshToken } = userLoginTokens;
+    // console.log("accessToken=:", accessToken);
+    // console.log("refreshToken=:", refreshToken);
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "None",
