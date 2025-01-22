@@ -24,9 +24,10 @@ const ACCESS_TOKEN = {
 };
 
 const REFRESH_TOKEN = {
-  refresh: process.env.AUTH_REFRESH_TOKEN_SECRET,
+  expiresIn: process.env.AUTH_REFRESH_TOKEN_EXPIRY,
   secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
 };
+console.log(REFRESH_TOKEN.expiresIn);
 // Setup Mailtrap Transporter
 const transporter = nodemailer.createTransport({
   host: process.env.HOST,
@@ -206,8 +207,8 @@ export const login = async (req, res, next) => {
       httpOnly: true,
       sameSite: "None",
       secure: true,
+      maxAge: 2 * 60 * 1000, // 2 minutes in milliseconds
       // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-      maxAge: 10 * 60 * 60 * 1000, // 10 hours in milliseconds
     });
     return res.status(201).json({
       success: true,
@@ -446,20 +447,21 @@ export const refreshAccess = async (req, res, next) => {
     }
     const tokens = await generateToken(user);
     const newAccessToken = tokens.accessToken;
-    const newRefreshToken = tokens.refreshToken;
+    // const newRefreshToken = tokens.refreshToken;
 
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    });
-    res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-      maxAge: 15 * 60 * 1000, // 15 minutes in milliseconds
-    });
+    // res.cookie("refreshToken", newRefreshToken, {
+    //   httpOnly: true,
+    //   sameSite: "None",
+    //   secure: true,
+    //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    // });
+    // res.cookie("accessToken", newAccessToken, {
+    //   httpOnly: true,
+    //   sameSite: "None",
+    //   secure: true,
+    //   // maxAge: 15 * 60 * 1000, // 15 minutes in milliseconds
+    //   maxAge: 15 * 60 * 1000, // 15 minutes in milliseconds
+    // });
     return res.status(200).json({
       success: true,
       accessToken: newAccessToken,
