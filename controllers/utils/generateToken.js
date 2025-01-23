@@ -16,13 +16,13 @@ export const generateToken = async (user) => {
     const accessToken = jwt.sign(
       payload,
       process.env.AUTH_ACCESS_TOKEN_SECRET,
-      { expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY }
+      { expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY.trim() }
     );
 
     const refreshToken = jwt.sign(
       payload,
       process.env.AUTH_REFRESH_TOKEN_SECRET,
-      { expiresIn: process.env.AUTH_REFRESH_TOKEN_EXPIRY }
+      { expiresIn: process.env.AUTH_REFRESH_TOKEN_EXPIRY.trim() }
     );
     // Set refresh token as a cookie
     //Add one more generateResetToken function here

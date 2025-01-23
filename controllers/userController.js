@@ -169,10 +169,8 @@ export const emailVerification = async (req, res) => {
   }
 };
 export const login = async (req, res, next) => {
-  // console.log("Top Data form=", req.body);
   try {
     const errors = validationResult(req);
-    // console.log(errors);
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
@@ -180,7 +178,6 @@ export const login = async (req, res, next) => {
     const userLogin = await prisma.user.findUnique({
       where: { email },
     });
-    // console.log(userLogin);
     if (!userLogin) {
       throw new Error(
         "E-mail Cannot find user with these credentials. Please singUp first"
@@ -200,15 +197,12 @@ export const login = async (req, res, next) => {
     }
     const userLoginTokens = await generateToken(userLogin, res);
     const { accessToken, refreshToken } = userLoginTokens;
-    // console.log("accessToken=:", accessToken);
-    // console.log("refreshToken=:", refreshToken);
-
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "None",
       secure: true,
-      maxAge: 2 * 60 * 1000, // 2 minutes in milliseconds
-      // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      // maxAge: 1 * 60 * 1000, // 1 minute in milliseconds
+      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
     });
     return res.status(201).json({
       success: true,
@@ -252,7 +246,8 @@ export const googleLogin = async (req, res, next) => {
       httpOnly: true,
       sameSite: "None",
       secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
+      // maxAge: 2 * 60 * 1000, // 7 days in milliseconds
       // secure: false,
       // sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
@@ -385,6 +380,7 @@ export const logoutAllDevices = async (req, res, next) => {
 export const refreshAccess = async (req, res, next) => {
   try {
     const cookies = req.cookies;
+    console.log("Reauth:=", cookies);
     const authHeader = req.header("Authorization");
     if (!cookies.refreshToken) {
       throw new AuthorizationError(
@@ -409,6 +405,7 @@ export const refreshAccess = async (req, res, next) => {
       );
     }
     const rfTkn = cookies.refreshToken;
+    console.log("Cookies Refresh Token:=", rfTkn);
     let decodedRefreshTkn;
     try {
       if (!process.env.AUTH_REFRESH_TOKEN_SECRET) {
@@ -447,14 +444,14 @@ export const refreshAccess = async (req, res, next) => {
     }
     const tokens = await generateToken(user);
     const newAccessToken = tokens.accessToken;
-    // const newRefreshToken = tokens.refreshToken;
-
-    // res.cookie("refreshToken", newRefreshToken, {
-    //   httpOnly: true,
-    //   sameSite: "None",
-    //   secure: true,
-    //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    // });
+    const newRefreshToken = tokens.refreshToken;
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      // maxAge: 1 * 60 * 1000, // 1 minutes in milliseconds
+      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
+    });
     // res.cookie("accessToken", newAccessToken, {
     //   httpOnly: true,
     //   sameSite: "None",
