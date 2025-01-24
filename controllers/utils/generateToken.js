@@ -21,13 +21,13 @@ export const generateToken = async (user) => {
 
     const refreshToken = jwt.sign(
       payload,
+      // process.env.AUTH_REFRESH_TOKEN_SECRET,
       process.env.AUTH_REFRESH_TOKEN_SECRET,
       { expiresIn: process.env.AUTH_REFRESH_TOKEN_EXPIRY.trim() }
     );
     // Set refresh token as a cookie
     //Add one more generateResetToken function here
     return { accessToken, refreshToken };
-
     // const expiresAt = new Date();
     // expiresAt.setDate(expiresAt.getDate() + 30);
   } catch (err) {
@@ -36,7 +36,6 @@ export const generateToken = async (user) => {
     await prisma.$disconnect();
   }
 };
-
 export const refreshAccessToken = async (refreshToken) => {
   try {
     // Verify the provided refresh token
@@ -48,16 +47,15 @@ export const refreshAccessToken = async (refreshToken) => {
     const accessToken = jwt.sign(
       { userId: decoded.userId },
       process.env.ACCESS_TOKEN_SECRET,
-
-      { expiresIn: "15m" }
+      // process.env.AUTH_REFRESH_TOKEN_SECRET,
+      { expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY.trim() }
     );
-
+    console.log(accessToken);
     return Promise.resolve({ accessToken });
   } catch (err) {
     return Promise.reject(err);
   }
 };
-
 export const generateResetToken = async (user) => {
   try {
     const resetTokenValue = crypto.randomBytes(20).toString("base64url");

@@ -27,7 +27,7 @@ const REFRESH_TOKEN = {
   expiresIn: process.env.AUTH_REFRESH_TOKEN_EXPIRY,
   secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
 };
-console.log(REFRESH_TOKEN.expiresIn);
+// console.log(REFRESH_TOKEN.secret);
 // Setup Mailtrap Transporter
 const transporter = nodemailer.createTransport({
   host: process.env.HOST,
@@ -196,13 +196,15 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
     const userLoginTokens = await generateToken(userLogin, res);
+    // console.log(userLoginTokens);
     const { accessToken, refreshToken } = userLoginTokens;
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "None",
       secure: true,
-      // maxAge: 1 * 60 * 1000, // 1 minute in milliseconds
-      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
+      maxAge: 5 * 60 * 1000, // 5 minutes in milliseconds
+      maxAge: 60 * 1000, // 1 minute in milliseconds
+      // maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
     });
     return res.status(201).json({
       success: true,
@@ -405,10 +407,11 @@ export const refreshAccess = async (req, res, next) => {
       );
     }
     const rfTkn = cookies.refreshToken;
-    console.log("Cookies Refresh Token:=", rfTkn);
+    // console.log("Cookies Refresh Token:=", rfTkn);
     let decodedRefreshTkn;
     try {
       if (!process.env.AUTH_REFRESH_TOKEN_SECRET) {
+        // console.log("Process sy verify nae houa");
         throw new Error(
           "Refresh token secret is not set in environment variables!"
         );
@@ -417,7 +420,10 @@ export const refreshAccess = async (req, res, next) => {
         rfTkn,
         process.env.AUTH_REFRESH_TOKEN_SECRET
       );
+      // const decoded = jwt.verify(rfTkn, REFRESH_TOKEN.secret);
+      // console.log("decodedRefreshTkn=:", decoded);
     } catch (error) {
+      console.error("JWT verification error:", error.message);
       throw new AuthorizationError(
         "Authentication Error",
         "You are unauthenticated!",
@@ -428,7 +434,6 @@ export const refreshAccess = async (req, res, next) => {
         }
       );
     }
-
     const userId = decodedRefreshTkn._id;
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -444,14 +449,15 @@ export const refreshAccess = async (req, res, next) => {
     }
     const tokens = await generateToken(user);
     const newAccessToken = tokens.accessToken;
-    const newRefreshToken = tokens.refreshToken;
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-      // maxAge: 1 * 60 * 1000, // 1 minutes in milliseconds
-      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
-    });
+    console.log(newAccessToken);
+    // const newRefreshToken = tokens.refreshToken;
+    // res.cookie("refreshToken", newRefreshToken, {
+    //   httpOnly: true,
+    //   sameSite: "None",
+    //   secure: true,
+    //   maxAge: 60 * 1000, // 1 minutes in milliseconds
+    //   // maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
+    // });
     // res.cookie("accessToken", newAccessToken, {
     //   httpOnly: true,
     //   sameSite: "None",
