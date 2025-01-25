@@ -50,7 +50,7 @@ export const refreshAccessToken = async (refreshToken) => {
       // process.env.AUTH_REFRESH_TOKEN_SECRET,
       { expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY.trim() }
     );
-    console.log(accessToken);
+    console.log("accessToken genetor file:=", accessToken);
     return Promise.resolve({ accessToken });
   } catch (err) {
     return Promise.reject(err);

@@ -202,9 +202,9 @@ export const login = async (req, res, next) => {
       httpOnly: true,
       sameSite: "None",
       secure: true,
-      maxAge: 5 * 60 * 1000, // 5 minutes in milliseconds
-      maxAge: 60 * 1000, // 1 minute in milliseconds
-      // maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
+      // maxAge: 5 * 60 * 1000, // 5 minutes in milliseconds
+      // maxAge: 60 * 1000, // 1 minute in milliseconds
+      maxAge: 15 * 24 * 60 * 60, // 15 days in milliseconds
     });
     return res.status(201).json({
       success: true,
@@ -248,8 +248,9 @@ export const googleLogin = async (req, res, next) => {
       httpOnly: true,
       sameSite: "None",
       secure: true,
-      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days in milliseconds
-      // maxAge: 2 * 60 * 1000, // 7 days in milliseconds
+      maxAge: 15 * 24 * 60 * 60, // 15 days in milliseconds
+      // maxAge: 60 * 1000, // 1 minute in milliseconds
+      // maxAge: 15 * 24 * 60 * 60, // 15 days in milliseconds
       // secure: false,
       // sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
@@ -407,7 +408,7 @@ export const refreshAccess = async (req, res, next) => {
       );
     }
     const rfTkn = cookies.refreshToken;
-    // console.log("Cookies Refresh Token:=", rfTkn);
+    console.log("Cookies Refresh Token:=", rfTkn);
     let decodedRefreshTkn;
     try {
       if (!process.env.AUTH_REFRESH_TOKEN_SECRET) {
