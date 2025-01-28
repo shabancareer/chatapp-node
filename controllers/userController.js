@@ -602,3 +602,41 @@ export const resetPassword = async (req, res, next) => {
     next(error);
   }
 };
+export const updatePhoto = async (req, res, next) => {
+  const { userId } = req.body;
+  console.log("File:", req.file);
+  // console.log(req.body);
+  if (!req.file || !userId) {
+    return res.status(400).json({ message: "Missing userId or photo" });
+  }
+  const isValidImage = await validateImage(req.file);
+  if (!isValidImage) {
+    return res
+      .status(400)
+      .json({ message: "Please upload a valid image file" });
+  }
+  try {
+    const imageKitResponse = await uploadToImageKit(req.file);
+    const imageUrl = imageKitResponse.url;
+    if (!imageUrl) {
+      throw new Error("Failed to upload image to ImageKit");
+    }
+    const updatePhoto = await prisma.user.create({
+      data: {
+        file: imageUrl, // Store ImageKit URL in the database
+      },
+    });
+    return res.status(201).json({
+      success: true,
+      data: updatePhoto,
+      // accessToken,
+      msg: "user Photo Updated successfully",
+      // res.json({ message: "Verification email sent. Please check your inbox." });
+    });
+    next();
+    // res.json({ photo: result.rows[0].photo });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error updating photo" });
+  }
+};

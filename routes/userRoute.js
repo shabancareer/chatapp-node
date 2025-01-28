@@ -4,7 +4,6 @@ import multer from "multer";
 // import path from "path";
 // import fs from "fs";
 // import { FileType } from "file-type";
-// import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";
 import {
@@ -17,12 +16,14 @@ import {
   resetPassword,
   fetchAllProfiles,
   googleLogin,
+  updatePhoto,
   // emailVerification,
 } from "../controllers/userController.js";
 import {
   // fetchUserProfile,
   fetchAuthUserProfile,
 } from "../controllers/authController.js";
+// import { upload } from "../controllers/utils/fileupload.js";
 export const upload = multer({
   dest: "uploads/",
   limits: {
@@ -42,6 +43,9 @@ router.patch(
   validators.resetPasswordValidator,
   resetPassword
 );
+// router.post("/update-photo", upload, requireAuthentication, updatePhoto);
+router.post("/update-photo", upload, requireAuthentication, updatePhoto);
+
 // router.get(
 //   "/resetpass/:resetToken",
 //   validators.resetPasswordValidator,
@@ -56,7 +60,6 @@ router.get("/allusers", requireAuthentication, fetchAllProfiles);
 //   validators.fetchUserProfileValidator,
 //   fetchUserProfile
 // );
-
 // router.get("/protected-route", authCheck, (req, res) => {
 //   res
 //     .status(200)

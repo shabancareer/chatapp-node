@@ -5,9 +5,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 // Pull in Environment variables
-const ACCESS_TOKEN = {
-  secret: process.env.AUTH_ACCESS_TOKEN_SECRET,
-};
 // console.log("ACCESS_TOKEN:=", ACCESS_TOKEN);
 export const requireAuthentication = async (req, res, next) => {
   try {
@@ -29,7 +26,8 @@ export const requireAuthentication = async (req, res, next) => {
     }
     const accessTokenParts = authHeader.split(" ");
     const aTkn = accessTokenParts[1];
-    const decoded = jwt.verify(aTkn, ACCESS_TOKEN.secret);
+    const decoded = jwt.verify(aTkn, process.env.AUTH_ACCESS_TOKEN_SECRET);
+    // process.env.ACCESS_TOKEN_SECRET,
     // Attach authenticated user and Access Token to request object
     req.userId = decoded._id;
     req.token = aTkn;
