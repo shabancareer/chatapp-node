@@ -43,8 +43,8 @@ router.patch(
   validators.resetPasswordValidator,
   resetPassword
 );
+router.post("/update-photo", upload, updatePhoto);
 // router.post("/update-photo", upload, requireAuthentication, updatePhoto);
-router.post("/update-photo", upload, requireAuthentication, updatePhoto);
 
 // router.get(
 //   "/resetpass/:resetToken",

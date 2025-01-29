@@ -604,7 +604,7 @@ export const resetPassword = async (req, res, next) => {
 };
 export const updatePhoto = async (req, res, next) => {
   const { userId } = req.body;
-  console.log("File:", req.file);
+  // console.log("File:", req.file);
   // console.log(req.body);
   if (!req.file || !userId) {
     return res.status(400).json({ message: "Missing userId or photo" });
@@ -621,13 +621,19 @@ export const updatePhoto = async (req, res, next) => {
     if (!imageUrl) {
       throw new Error("Failed to upload image to ImageKit");
     }
-    const updatePhoto = await prisma.user.create({
-      data: {
-        file: imageUrl, // Store ImageKit URL in the database
+    const updatePhoto = await prisma.user.update({
+      where: {
+        id: parseInt(userId), // Make sure `userId` is defined
       },
+      data: {
+        photo: imageUrl, // Store ImageKit URL in the database
+      },
+      select: { id: true, photo: true },
     });
+    // console.log("Updated photo:=", updatePhoto);
     return res.status(201).json({
       success: true,
+      // photo: updatePhoto,
       data: updatePhoto,
       // accessToken,
       msg: "user Photo Updated successfully",
