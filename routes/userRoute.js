@@ -35,7 +35,7 @@ router.post("/singUp", upload, validators.signupValidator, singUp);
 router.post("/login", validators.loginValidator, login);
 router.post("/googleLogin", googleLogin);
 // router.post("/logout", requireAuthentication, logout);
-router.post("/logout", logout);
+router.post("/logout", requireAuthentication, logout);
 router.post("/master-logout", requireAuthentication, logoutAllDevices);
 router.post("/reauth", refreshAccess);
 router.post("/forgotpass", validators.forgotPasswordValidator, forgotPassword);
