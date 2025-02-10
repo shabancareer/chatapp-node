@@ -270,14 +270,19 @@ export const googleLogin = async (req, res, next) => {
 export const fetchAllProfiles = async (req, res, next) => {
   try {
     const keyword = req.query.search || "";
+    // console.log(keyword);
     const userId = req.userId;
     const users = await prisma.user.findMany({
       where: {
         AND: [
           {
+            // OR: [
+            //   { name: { contains: keyword, mode: "insensitive" } },
+            //   { email: { contains: keyword, mode: "insensitive" } },
+            // ],
             OR: [
-              { name: { contains: keyword, mode: "insensitive" } },
-              { email: { contains: keyword, mode: "insensitive" } },
+              { name: { startsWith: keyword, mode: "insensitive" } }, // Ensure names start with the keyword
+              { email: { startsWith: keyword, mode: "insensitive" } }, // Apply same logic for emails if needed
             ],
           },
           { id: { not: userId } }, // Exclude the current user
