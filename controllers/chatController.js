@@ -6,6 +6,7 @@ import { fileTypeFromBuffer } from "file-type";
 const prisma = new PrismaClient();
 
 export const accessChat = async (req, res, next) => {
+  console.log(req.body);
   try {
     let fileUrl = null;
     let fileTypeResult = null;
@@ -52,6 +53,7 @@ export const accessChat = async (req, res, next) => {
     }
     // Convert receiverId to an integer
     const receiverId = parseInt(req.body.receiverId);
+    // console.log(receiverId);
     const content = req.body.content;
     // Validate the converted receiverId and content
     if (isNaN(receiverId) || !content) {
