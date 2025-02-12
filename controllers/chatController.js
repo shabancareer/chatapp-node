@@ -162,6 +162,12 @@ export const fetchChats = async (req, res, next) => {
         ],
       },
       include: {
+        sender: {
+          select: { id: true, name: true, photo: true, email: true }, // Include sender details
+        },
+        receiver: {
+          select: { id: true, name: true, photo: true, email: true }, // Include receiver details
+        },
         GroupChat: {
           include: {
             group: {
