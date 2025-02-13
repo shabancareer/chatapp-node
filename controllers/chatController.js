@@ -6,19 +6,24 @@ import { fileTypeFromBuffer } from "file-type";
 const prisma = new PrismaClient();
 
 export const accessChat = async (req, res, next) => {
-  console.log(req.body);
+  console.log("Req body=", req.body);
+
   try {
     let fileUrl = null;
     let fileTypeResult = null;
+
+    // Handle file upload
     if (req.file) {
       const fileBuffer = req.file.buffer;
       if (!fileBuffer || fileBuffer.length === 0) {
         return res.status(400).json({ message: "File buffer is empty" });
       }
+
       fileTypeResult = await fileTypeFromBuffer(fileBuffer);
       if (!fileTypeResult) {
         return res.status(400).json({ message: "Invalid file type" });
       }
+
       let folder = "uploadsChat";
       if (fileTypeResult.mime.startsWith("image/")) {
         folder = "uploadsChat/Images";
@@ -40,113 +45,81 @@ export const accessChat = async (req, res, next) => {
       } else {
         return res.status(400).json({ message: "Unsupported file type" });
       }
+
+      // Ensure folder exists
       fs.mkdirSync(folder, { recursive: true });
+
       const uniqueFilename = `${Date.now()}-${req.file.originalname}`;
       const filePath = path.join(folder, uniqueFilename);
-      fs.writeFile(filePath, fileBuffer, (err) => {
-        if (err) {
-          console.error("Error writing file:", err);
-          return res.status(500).json({ message: "File write error" });
-        }
-        fileUrl = `/uploadsChat/${folder}/${uniqueFilename}`;
-      });
+
+      // Use async/await for writing the file
+      await fs.promises.writeFile(filePath, fileBuffer);
+
+      fileUrl = `/${folder}/${uniqueFilename}`; // Corrected file path
     }
+
     // Convert receiverId to an integer
     const receiverId = parseInt(req.body.receiverId);
-    // console.log(receiverId);
-    const content = req.body.content;
-    // Validate the converted receiverId and content
-    if (isNaN(receiverId) || !content) {
+
+    // Validate receiverId and content
+    if (isNaN(receiverId) || !req.body.content) {
       return res.status(400).json({
         message: "Receiver ID must be a valid number and content is required",
       });
     }
+
     // Ensure sender and receiver are different
     if (req.userId === receiverId) {
       return res.status(400).json({
         message: "Sender and receiver cannot be the same",
       });
     }
-    const existingChat = await prisma.chat.findFirst({
-      // where: {
-      //   // AND: [{ userId: senderId }, { receiverId: receiverId }],
-      //   AND: [{ senderId: req.userId }, { receiverId: receiverId }],
-      // },
+
+    // Check if a chat already exists between the sender and receiver
+    let existingChat = await prisma.chat.findFirst({
       where: {
         OR: [
-          { senderId: req.userId, receiverId: receiverId },
+          { senderId: req.userId, receiverId },
           { senderId: receiverId, receiverId: req.userId },
         ],
       },
     });
-    // console.log(existingChat);
+
+    // If no chat exists, create a new one
     if (!existingChat) {
-      const newMessage = await prisma.chat.create({
+      existingChat = await prisma.chat.create({
         data: {
-          sender: req.userId,
-          content,
-          // receiverId,
-          sender: {
-            connect: {
-              id: req.userId,
-            },
-          },
-          receiver: {
-            connect: {
-              id: receiverId,
-            },
-          },
-          ...(fileUrl && {
-            File: {
-              create: {
-                url: fileUrl,
-                fileType: fileTypeResult.mime,
-              },
-            },
-          }),
+          senderId: req.userId,
+          receiverId: receiverId,
         },
-      });
-      res.status(201).json({
-        message: "Chat created successfully",
-        newMessage,
-      });
-    } else {
-      const newChat = await prisma.chat.create({
-        data: {
-          content,
-          sender: req.userId,
-          // receiverId,
-          sender: {
-            connect: {
-              id: req.userId,
-            },
-          },
-          receiver: {
-            connect: {
-              id: receiverId,
-            },
-          },
-          ...(fileUrl && {
-            File: {
-              create: {
-                url: fileUrl,
-                fileType: fileTypeResult.mime,
-              },
-            },
-          }),
-        },
-      });
-      return res.status(201).json({
-        message: "Chat updated successfully",
-        // path: filePath,
-        // path: fileUrl,
-        // fileType: fileTypeResult.mime,
-        newChat,
       });
     }
+
+    // Create a new message associated with the chat
+    const newMessage = await prisma.message.create({
+      data: {
+        chatId: existingChat.id,
+        senderId: req.userId,
+        content: req.body.content,
+        ...(fileUrl && {
+          files: {
+            create: {
+              url: fileUrl,
+              fileType: fileTypeResult.mime,
+            },
+          },
+        }),
+      },
+    });
+
+    return res.status(201).json({
+      message: "Message sent successfully",
+      chat: existingChat,
+      newMessage,
+    });
   } catch (error) {
-    console.error(error);
-    next(error);
+    console.error("Error in accessChat:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 export const fetchChats = async (req, res, next) => {

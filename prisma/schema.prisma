@@ -7,34 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// model User {
-//   id                       Int                 @id @default(autoincrement())
-//   name                     String
-//   password                 String?
-//   email                    String              @unique
-//   photo                    String              @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
-//   gender                   GenderType          @default(Other)
-//   googleId                 String?
-//   resetpasswordtoken       String?
-//   resetpasswordtokenexpiry DateTime?
-//   createdAt                DateTime            @default(now())
-//   updatedAt                DateTime            @updatedAt
-//   receivedChats            Chat[]              @relation("ReceivedMessages")
-//   sentChats                Chat[]              @relation("SentMessages")
-//   GroupMembers             GroupMember[]
-//   ownedGroups              Group[]             @relation("OwnerGroups")
-//   emailVerified            Boolean             @default(false)
-//   tokenEmailVerified       tokenEmailVerified?
-// }
-
-// model tokenEmailVerified {
-//   id        Int      @id @default(autoincrement())
-//   type      String
-//   token     String
-//   expiresAt DateTime
-//   user      User     @relation(fields: [userId], references: [id])
-//   userId    Int      @unique // Ensuring one-to-one relation with User
-// }
 model User {
   id                       Int                 @id @default(autoincrement())
   name                     String
@@ -53,6 +25,7 @@ model User {
   ownedGroups              Group[]             @relation("OwnerGroups")
   emailVerified            Boolean             @default(false)
   tokenEmailVerified       tokenEmailVerified? // This should establish the one-to-one relation
+  Message                  Message[]
 }
 
 model tokenEmailVerified {
@@ -65,25 +38,39 @@ model tokenEmailVerified {
 
 model Chat {
   id         Int        @id @default(autoincrement())
-  content    String?
-  isRead     Boolean    @default(false)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   receiverId Int
   senderId   Int
   receiver   User       @relation(name: "ReceivedMessages", fields: [receiverId], references: [id])
   sender     User       @relation(name: "SentMessages", fields: [senderId], references: [id])
+  messages   Message[] // ✅ One-to-many relation: A chat has multiple messages
   GroupChat  GroupChat?
   File       File[]
 }
 
+model Message {
+  id        Int      @id @default(autoincrement())
+  chatId    Int
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId  Int
+  sender    User     @relation(fields: [senderId], references: [id])
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  files     File[] // ✅ Each message can have multiple files (optional)
+}
+
 model File {
   id        Int      @id @default(autoincrement())
-  fileType  String // e.g., 'image', 'video', 'audio', 'document'
-  url       String // Path or URL to access the file
-  fileSize  Int? // Size of the file (optional)
+  fileType  String
+  url       String
+  fileSize  Int?
   createdAt DateTime @default(now())
-  chat      Chat?    @relation(fields: [chatId], references: [id])
+  message   Message? @relation(fields: [messageId], references: [id])
+  messageId Int?
+  Chat      Chat?    @relation(fields: [chatId], references: [id])
   chatId    Int?
 }
 
