@@ -230,13 +230,15 @@ export const googleLogin = async (req, res, next) => {
       where: { email },
     });
     if (!userLogin) {
-      // console.log("userLogin with Google=", userLogin);
-      throw new Error(
-        "E-mail Cannot find user with these credentials. Please singUp first"
-      );
+      console.log("userLogin with Google=", userLogin);
+      return res.status(404).json({
+        error:
+          "E-mail cannot find user with these credentials. Please sign up first.",
+      });
     }
     // Check if the email is verified
     if (!userLogin.emailVerified) {
+      console.log(userLogin.emailVerified);
       return res
         .status(403)
         .json({ error: "Please verify your email before logging in." });
