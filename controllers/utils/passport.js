@@ -189,7 +189,6 @@ passport.use(
 
           // Clean up local file after upload
           fs.unlinkSync(filePath);
-
           // Generate and save email verification token
           const emailVerificationToken = jwt.sign(
             { userId: user.id },

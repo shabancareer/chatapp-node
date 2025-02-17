@@ -11,7 +11,7 @@ import chatRoute from "./routes/chatRoute.js";
 import CustomError from "./controllers/utils/config/errors/CustomError.js";
 import { emailVerification } from "./controllers/userController.js";
 import passport from "./controllers/utils/passport.js";
-import { generateToken } from "./controllers/utils/generateToken.js";
+// import { generateToken } from "./controllers/utils/generateToken.js";
 
 const ACCESS_TOKEN = {
   access: process.env.AUTH_ACCESS_TOKEN_SECRET,
@@ -43,6 +43,7 @@ app.use(
 // initialize passport and session
 app.use(passport.initialize());
 app.use(passport.session());
+
 app.get("/", (req, res) => {
   try {
     res.render("pages/auth");
