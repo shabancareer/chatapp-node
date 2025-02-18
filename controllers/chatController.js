@@ -123,6 +123,7 @@ export const accessChat = async (req, res, next) => {
   }
 };
 export const fetchChats = async (req, res, next) => {
+  console.log(req.body);
   try {
     const authUser = req.userId;
     // console.log("Author:=", authUser);
