@@ -168,7 +168,7 @@ export const emailVerification = async (req, res) => {
   }
 };
 export const login = async (req, res, next) => {
-  console.log(req.body);
+  // console.log(req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

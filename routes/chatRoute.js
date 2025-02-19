@@ -9,11 +9,13 @@ import {
   removeUser,
   deleteGroup,
   addUserToGroup,
+  getChatMessages,
 } from "../controllers/chatController.js";
 import { upload } from "../controllers/utils/fileupload.js";
 
 const router = Router();
 router.post("/chats", requireAuthentication, accessChat);
+router.get("/messages", requireAuthentication, getChatMessages);
 router.get("/allChats", requireAuthentication, fetchChats);
 router.post("/groupChats", upload, requireAuthentication, sendMessageToGroup);
 router.post("/group", upload, requireAuthentication, createGroup);

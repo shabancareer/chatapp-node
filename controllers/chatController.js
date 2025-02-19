@@ -142,6 +142,11 @@ export const fetchChats = async (req, res, next) => {
         receiver: {
           select: { id: true, name: true, photo: true, email: true }, // Include receiver details
         },
+        // messages: {
+        //   orderBy: {
+        //     createdAt: "asc",
+        //   },
+        // },
         GroupChat: {
           include: {
             group: {
@@ -650,5 +655,46 @@ export const addUserToGroup = async (req, res, next) => {
       message: "An error occurred while Updating the group.",
     });
     next(error);
+  }
+};
+
+export const getChatMessages = async (req, res) => {
+  console.log("Incoming Request Query:", req.query);
+  try {
+    const { receiverId, authUser } = req.query; // Get user IDs from query parameters
+    if (!receiverId || !authUser) {
+      console.error("Missing parameters:", { receiverId, authUser });
+      return res.status(400).json({ error: "Missing receiverId or authUser" });
+    }
+    const chat = await prisma.chat.findFirst({
+      where: {
+        OR: [
+          { senderId: Number(authUser), receiverId: Number(receiverId) },
+          { senderId: Number(receiverId), receiverId: Number(authUser) },
+        ],
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          include: {
+            sender: {
+              select: { id: true, name: true, photo: true },
+            },
+            files: true, // If messages have files
+          },
+        },
+      },
+    });
+
+    if (!chat) {
+      return res.json({ messages: [] }); // If no chat exists, return empty messages
+    }
+
+    res.json(chat.messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
