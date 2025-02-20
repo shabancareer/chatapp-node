@@ -661,11 +661,13 @@ export const addUserToGroup = async (req, res, next) => {
 export const getChatMessages = async (req, res) => {
   console.log("Incoming Request Query:", req.query);
   try {
-    const { receiverId, authUser } = req.query; // Get user IDs from query parameters
+    const { receiverId, authUser } = req.query;
     if (!receiverId || !authUser) {
       console.error("Missing parameters:", { receiverId, authUser });
       return res.status(400).json({ error: "Missing receiverId or authUser" });
     }
+
+    // Fetch chat with users included
     const chat = await prisma.chat.findFirst({
       where: {
         OR: [
@@ -674,6 +676,12 @@ export const getChatMessages = async (req, res) => {
         ],
       },
       include: {
+        sender: {
+          select: { id: true, name: true, email: true, photo: true },
+        },
+        receiver: {
+          select: { id: true, name: true, email: true, photo: true },
+        },
         messages: {
           orderBy: {
             createdAt: "asc",
@@ -682,17 +690,40 @@ export const getChatMessages = async (req, res) => {
             sender: {
               select: { id: true, name: true, photo: true },
             },
-            files: true, // If messages have files
+            files: true,
           },
         },
       },
     });
 
-    if (!chat) {
-      return res.json({ messages: [] }); // If no chat exists, return empty messages
+    // If chat exists, return chat data
+    if (chat) {
+      return res.json({
+        users: {
+          sender: chat.sender,
+          receiver: chat.receiver,
+        },
+        messages: chat.messages,
+      });
     }
 
-    res.json(chat.messages);
+    // If no chat exists, find the receiver details
+    const receiver = await prisma.user.findUnique({
+      where: { id: Number(receiverId) },
+      select: { id: true, name: true, email: true, photo: true },
+    });
+
+    if (!receiver) {
+      return res.status(404).json({ error: "Receiver user not found" });
+    }
+
+    return res.json({
+      users: {
+        // sender: { id: Number(authUser), name: "", email: "", photo: "" },
+        receiver: receiver,
+      },
+      messages: [],
+    });
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ error: "Internal Server Error" });
