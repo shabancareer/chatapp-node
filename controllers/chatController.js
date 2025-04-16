@@ -142,11 +142,11 @@ export const fetchChats = async (req, res, next) => {
         receiver: {
           select: { id: true, name: true, photo: true, email: true }, // Include receiver details
         },
-        // messages: {
-        //   orderBy: {
-        //     createdAt: "asc",
-        //   },
-        // },
+        messages: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
         GroupChat: {
           include: {
             group: {

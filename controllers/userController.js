@@ -272,36 +272,65 @@ export const googleLogin = async (req, res, next) => {
 export const fetchAllProfiles = async (req, res, next) => {
   try {
     const keyword = req.query.search || "";
-    // console.log(keyword);
-    const userId = req.userId;
+    const currentUserId = req.userId;
+
     const users = await prisma.user.findMany({
       where: {
         AND: [
           {
-            // OR: [
-            //   { name: { contains: keyword, mode: "insensitive" } },
-            //   { email: { contains: keyword, mode: "insensitive" } },
-            // ],
             OR: [
-              { name: { startsWith: keyword, mode: "insensitive" } }, // Ensure names start with the keyword
-              { email: { startsWith: keyword, mode: "insensitive" } }, // Apply same logic for emails if needed
+              { name: { startsWith: keyword, mode: "insensitive" } },
+              { email: { startsWith: keyword, mode: "insensitive" } },
             ],
           },
-          { id: { not: userId } }, // Exclude the current user
+          { id: { not: currentUserId } },
         ],
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        photo: true,
+      },
     });
-    if (users.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No users found matching the query." });
-    }
-    res.json(users);
+
+    const enrichedUsers = await Promise.all(
+      users.map(async (user) => {
+        const chat = await prisma.chat.findFirst({
+          where: {
+            OR: [
+              { senderId: currentUserId, receiverId: user.id },
+              { senderId: user.id, receiverId: currentUserId },
+            ],
+          },
+          include: {
+            messages: {
+              orderBy: { createdAt: "desc" },
+              take: 20,
+              include: {
+                sender: {
+                  select: { id: true, name: true, photo: true },
+                },
+              },
+            },
+          },
+        });
+
+        return {
+          ...user,
+          chat: chat || null,
+        };
+      })
+    );
+
+    res.json(enrichedUsers);
+    console.log(enrichedUsers);
   } catch (error) {
-    console.log(error);
+    console.error("Error in fetchAllProfiles:", error);
     next(error);
   }
 };
+
 export const logout = async (req, res, next) => {
   try {
     const userId = req.userId;
